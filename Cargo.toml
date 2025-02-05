@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+# TODO: "full" should be replaced with only needed features
+tokio = { version = "1.43.0", features = ["full"] }
+libc = "0.2.169"
