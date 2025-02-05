@@ -15,6 +15,7 @@ fn log(msg: String, log_severity: LogSeverity) {
     println!("[{}] {} {}", log_severity, now(), msg);
 }
 
+#[cfg(target_os = "linux")]
 fn now() -> String {
     // Obtain the current time as a duration since the UNIX epoch.
     let now = SystemTime::now()
