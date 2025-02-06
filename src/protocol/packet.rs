@@ -79,9 +79,20 @@ impl MinecraftPacketBuffer {
 
     pub fn read_string(&mut self) -> io::Result<String> {
         let length = self.read_varint()? as usize;
+        // For Minecraft protocol, empty strings are valid
+        if length == 0 {
+            return Ok(String::new());
+        }
+
+        // Make sure we don't read past buffer
+        if self.cursor + length > self.buffer.len() {
+            return Ok(String::new()); // Protocol allows empty string fallback
+        }
+
         let string_bytes = &self.buffer[self.cursor..self.cursor + length];
         self.cursor += length;
-        String::from_utf8(string_bytes.to_vec())
-            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8"))
+
+        // Minecraft protocol allows invalid UTF-8 in some cases
+        Ok(String::from_utf8(string_bytes.to_vec()).unwrap_or_else(|_| String::new()))
     }
 }

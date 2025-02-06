@@ -23,11 +23,10 @@ async fn main() {
             let mut buffer = [0; 1024];
 
             match socket.read(&mut buffer).await {
-                Ok(size) => {
-                    log(format!("Received {} bytes", size), Info);
+                Ok(n) => {
+                    log(format!("Received {} bytes", n), Info);
 
-                    let mut packet_buffer =
-                        MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
+                    let mut packet_buffer = MinecraftPacketBuffer::from_bytes(buffer[..n].to_vec());
 
                     match HandshakePacket::read(&mut packet_buffer) {
                         Ok(handshake) => {
@@ -35,25 +34,14 @@ async fn main() {
 
                             let mut response = MinecraftPacketBuffer::new();
                             response.write_varint(0x00);
-                            if let Err(socket_write_error) =
-                                socket.write_all(&response.buffer).await
-                            {
-                                log(
-                                    format!("Failed to send response: {}", socket_write_error),
-                                    Error,
-                                );
+                            if let Err(e) = socket.write_all(&response.buffer).await {
+                                log(format!("Failed to send response: {}", e), Error);
                             }
                         }
-                        Err(handshake_parse_error) => log(
-                            format!("Failed to parse handshake: {}", handshake_parse_error),
-                            Error,
-                        ),
+                        Err(e) => log(format!("Failed to parse handshake: {}", e), Error),
                     }
                 }
-                Err(socket_read_error) => log(
-                    format!("Failed to read from socket: {}", socket_read_error),
-                    Error,
-                ),
+                Err(e) => log(format!("Failed to read from socket: {}", e), Error),
             }
         });
     }
