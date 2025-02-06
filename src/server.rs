@@ -23,13 +23,6 @@ async fn handle_connection(mut socket: TcpStream) {
             log(format!("Received {} bytes", size), Info);
             log(format!("Received packet: {:?}", &buffer[..size]), Info);
 
-            // // Check for legacy ping (packet starting with 0xFE)
-            // if buffer[0] == 0xFE {
-            //     log("Legacy ping detected".to_string(), LogSeverity::Info);
-            //     handle_legacy_ping(socket).await;
-            //     return;
-            // }
-
             let mut packet_buffer = MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
             match HandshakePacket::read(&mut packet_buffer) {
                 Ok(handshake) => {
