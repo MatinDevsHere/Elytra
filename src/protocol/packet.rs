@@ -1,0 +1,78 @@
+use std::io::{self};
+
+pub trait Packet {
+    fn packet_id() -> i32;
+    fn write(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()>;
+    fn read(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> where Self: Sized;
+}
+
+#[derive(Debug)]
+pub struct MinecraftPacketBuffer {
+    pub buffer: Vec<u8>, // Made public
+    cursor: usize,
+}
+
+impl MinecraftPacketBuffer {
+    pub fn new() -> Self {
+        Self {
+            buffer: Vec::new(),
+            cursor: 0,
+        }
+    }
+
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        Self {
+            buffer: bytes,
+            cursor: 0,
+        }
+    }
+
+    pub fn write_varint(&mut self, mut value: i32) {
+        loop {
+            let mut temp = (value & 0b0111_1111) as u8;
+            value = (value >> 7) & (i32::max_value() >> 6);
+            if value != 0 {
+                temp |= 0b1000_0000;
+            }
+            self.buffer.push(temp);
+            if value == 0 {
+                break;
+            }
+        }
+    }
+
+    pub fn read_varint(&mut self) -> io::Result<i32> {
+        let mut result = 0;
+        let mut shift = 0;
+
+        loop {
+            let byte = self.buffer[self.cursor];
+            self.cursor += 1;
+
+            result |= ((byte & 0b0111_1111) as i32) << shift;
+            if byte & 0b1000_0000 == 0 {
+                break;
+            }
+            shift += 7;
+
+            if shift >= 32 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "VarInt too big"));
+            }
+        }
+
+        Ok(result)
+    }
+
+    pub fn write_string(&mut self, value: &str) {
+        self.write_varint(value.len() as i32);
+        self.buffer.extend_from_slice(value.as_bytes());
+    }
+
+    pub fn read_string(&mut self) -> io::Result<String> {
+        let length = self.read_varint()? as usize;
+        let string_bytes = &self.buffer[self.cursor..self.cursor + length];
+        self.cursor += length;
+        String::from_utf8(string_bytes.to_vec())
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "Invalid UTF-8"))
+    }
+}
