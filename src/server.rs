@@ -5,6 +5,8 @@ use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
 use LogSeverity::*;
 
+/// Starts the server and listens for incoming connections.
+/// The server will listen on port 25565 by default.
 pub async fn run() {
     let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
     log("Listening on port 25565".to_string(), Info);
@@ -16,6 +18,9 @@ pub async fn run() {
     }
 }
 
+/// Handles incoming connections. Each connection is handled in a separate task.
+/// Reads the packet from the socket and handles the handshake.
+/// The handshake is handled in a separate function.
 async fn handle_connection(mut socket: TcpStream) {
     let mut buffer = [0u8; 1024];
     match socket.read(&mut buffer).await {

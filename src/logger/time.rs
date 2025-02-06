@@ -1,6 +1,7 @@
 ﻿use std::ffi::CStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+/// Returns the current time in the format YYYY-MM-DD HH:MM:SS TZ
 #[cfg(target_family = "unix")]
 pub fn now() -> String {
     let now = SystemTime::now()

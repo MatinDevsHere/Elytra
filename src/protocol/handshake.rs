@@ -5,6 +5,7 @@ use tokio::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
+/// Handshake packet
 #[derive(Debug)]
 pub struct HandshakePacket {
     pub protocol_version: i32,
@@ -13,11 +14,14 @@ pub struct HandshakePacket {
     pub next_state: i32,
 }
 
+/// Handshake packet impl
 impl Packet for HandshakePacket {
+    /// Packet ID
     fn packet_id() -> i32 {
         0x00
     }
 
+    /// Writes the packet to the buffer
     fn write(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
         buffer.write_varint(self.protocol_version);
         buffer.write_string(&self.server_address);
@@ -26,6 +30,7 @@ impl Packet for HandshakePacket {
         Ok(())
     }
 
+    /// Reads the packet from the buffer
     fn read(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> {
         let _packet_length = buffer.read_varint()?;
         let packet_id = buffer.read_varint()?;
@@ -46,6 +51,7 @@ impl Packet for HandshakePacket {
     }
 }
 
+/// Handles the handshake packet next state
 pub async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> io::Result<()> {
     match handshake.next_state {
         1 => {
@@ -70,7 +76,7 @@ pub async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket)
             });
 
             let response = StatusResponsePacket {
-                response: status_json.to_string(),
+                response_json: status_json.to_string(),
             };
 
             let mut packet_buffer = MinecraftPacketBuffer::new();
