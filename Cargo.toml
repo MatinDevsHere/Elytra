@@ -7,3 +7,4 @@ edition = "2021"
 # TODO: "full" should be replaced with only needed features
 tokio = { version = "1.43.0", features = ["full"] }
 libc = "0.2.169"
+byteorder = "1.5.0"
