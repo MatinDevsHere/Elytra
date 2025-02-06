@@ -17,7 +17,7 @@ pub trait Packet {
 
 #[derive(Debug)]
 pub struct MinecraftPacketBuffer {
-    pub buffer: Vec<u8>, // Made public
+    pub buffer: Vec<u8>,
     cursor: usize,
 }
 
@@ -36,33 +36,42 @@ impl MinecraftPacketBuffer {
         }
     }
 
-    pub fn write_varint(&mut self, mut value: i32) {
-        loop {
-            let mut temp = (value & 0b0111_1111) as u8;
-            value = (value >> 7) & (i32::max_value() >> 6);
-            if value != 0 {
-                temp |= 0b1000_0000;
-            }
-            self.buffer.push(temp);
-            if value == 0 {
-                break;
-            }
+    pub fn peek_byte(&self) -> Option<u8> {
+        if self.cursor < self.buffer.len() {
+            Some(self.buffer[self.cursor])
+        } else {
+            None
         }
     }
 
+    pub fn write_varint(&mut self, mut value: i32) {
+        while (value & !0x7F) != 0 {
+            self.buffer.push(((value & 0x7F) as u8) | 0x80);
+            value >>= 7;
+        }
+        self.buffer.push((value & 0x7F) as u8);
+    }
     pub fn read_varint(&mut self) -> io::Result<i32> {
         let mut result = 0;
         let mut shift = 0;
 
         loop {
+            if self.cursor >= self.buffer.len() {
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "EOF while reading VarInt",
+                ));
+            }
+
             let byte = self.buffer[self.cursor];
             self.cursor += 1;
 
-            result |= ((byte & 0b0111_1111) as i32) << shift;
-            if byte & 0b1000_0000 == 0 {
+            result |= ((byte & 0x7F) as i32) << shift;
+            shift += 7;
+
+            if (byte & 0x80) == 0 {
                 break;
             }
-            shift += 7;
 
             if shift >= 32 {
                 return Err(io::Error::new(io::ErrorKind::InvalidData, "VarInt too big"));
@@ -71,28 +80,47 @@ impl MinecraftPacketBuffer {
 
         Ok(result)
     }
-
     pub fn write_string(&mut self, value: &str) {
-        self.write_varint(value.len() as i32);
-        self.buffer.extend_from_slice(value.as_bytes());
+        let bytes = value.as_bytes();
+        self.write_varint(bytes.len() as i32);
+        self.buffer.extend_from_slice(bytes);
     }
 
     pub fn read_string(&mut self) -> io::Result<String> {
         let length = self.read_varint()? as usize;
-        // For Minecraft protocol, empty strings are valid
-        if length == 0 {
-            return Ok(String::new());
-        }
-
-        // Make sure we don't read past buffer
         if self.cursor + length > self.buffer.len() {
-            return Ok(String::new()); // Protocol allows empty string fallback
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read the full string",
+            ));
         }
-
-        let string_bytes = &self.buffer[self.cursor..self.cursor + length];
+        let bytes = &self.buffer[self.cursor..self.cursor + length];
         self.cursor += length;
+        String::from_utf8(bytes.to_vec()).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Failed to convert bytes to UTF-8 string",
+            )
+        })
+    }
 
-        // Minecraft protocol allows invalid UTF-8 in some cases
-        Ok(String::from_utf8(string_bytes.to_vec()).unwrap_or_else(|_| String::new()))
+    // Write a u16 in network (big-endian) order.
+    pub fn write_u16(&mut self, value: u16) {
+        self.buffer.push((value >> 8) as u8);
+        self.buffer.push((value & 0xFF) as u8);
+    }
+
+    // Read a u16 in network (big-endian) order.
+    pub fn read_u16(&mut self) -> io::Result<u16> {
+        if self.cursor + 2 > self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read u16",
+            ));
+        }
+        let hi = self.buffer[self.cursor] as u16;
+        let lo = self.buffer[self.cursor + 1] as u16;
+        self.cursor += 2;
+        Ok((hi << 8) | lo)
     }
 }

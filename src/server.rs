@@ -1,0 +1,56 @@
+﻿use crate::logger::{log, LogSeverity};
+use crate::protocol::handshake::*;
+use crate::protocol::packet::*;
+use tokio::io::AsyncReadExt;
+use tokio::net::{TcpListener, TcpStream};
+use LogSeverity::*;
+
+pub async fn run() {
+    let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
+    log("Listening on port 25565".to_string(), Info);
+
+    loop {
+        let (socket, addr) = listener.accept().await.unwrap();
+        log(format!("New connection from: {}", addr), Info);
+        tokio::spawn(handle_connection(socket));
+    }
+}
+
+async fn handle_connection(mut socket: TcpStream) {
+    let mut buffer = [0u8; 1024];
+    match socket.read(&mut buffer).await {
+        Ok(size) if size > 0 => {
+            log(format!("Received {} bytes", size), Info);
+            log(format!("Received packet: {:?}", &buffer[..size]), Info);
+
+            // // Check for legacy ping (packet starting with 0xFE)
+            // if buffer[0] == 0xFE {
+            //     log("Legacy ping detected".to_string(), LogSeverity::Info);
+            //     handle_legacy_ping(socket).await;
+            //     return;
+            // }
+
+            let mut packet_buffer = MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
+            match HandshakePacket::read(&mut packet_buffer) {
+                Ok(handshake) => {
+                    log(format!("Received handshake: {:?}", handshake), Info);
+                    if let Err(handshake_error) = handle_handshake(socket, handshake).await {
+                        log(
+                            format!("Failed to handle handshake: {}", handshake_error),
+                            Error,
+                        );
+                    }
+                }
+                Err(handshake_parse_error) => log(
+                    format!("Failed to parse handshake: {}", handshake_parse_error),
+                    Error,
+                ),
+            }
+        }
+        Ok(_) => panic!("This should never happen"),
+        Err(socket_read_error) => log(
+            format!("Failed to read from socket: {}", socket_read_error),
+            Error,
+        ),
+    }
+}
