@@ -1,4 +1,5 @@
-﻿use crate::protocol::packet::{MinecraftPacketBuffer, Packet};
+﻿use super::packet::*;
+use crate::protocol::packet::{MinecraftPacketBuffer, Packet};
 
 pub struct StatusRequestPacket;
 
@@ -16,7 +17,12 @@ pub struct StatusResponsePacket {
 }
 
 impl Packet for StatusResponsePacket {
+    fn packet_id() -> i32 {
+        0x00
+    }
+
     fn write(&self, buffer: &mut MinecraftPacketBuffer) -> std::io::Result<()> {
+        buffer.write_varint(Self::packet_id());
         buffer.write_string(&self.response);
         Ok(())
     }
