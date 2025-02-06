@@ -1,9 +1,18 @@
 use std::io::{self};
 
 pub trait Packet {
-    fn packet_id() -> i32;
-    fn write(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()>;
-    fn read(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> where Self: Sized;
+    fn packet_id() -> i32 {
+        0x00
+    }
+    fn write(&self, _buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
+        unimplemented!("Server-bound packets don't need write")
+    }
+    fn read(_buffer: &mut MinecraftPacketBuffer) -> io::Result<Self>
+    where
+        Self: Sized,
+    {
+        unimplemented!("Client-bound packets don't need read")
+    }
 }
 
 #[derive(Debug)]
