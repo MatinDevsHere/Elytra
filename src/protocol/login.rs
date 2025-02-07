@@ -1,4 +1,5 @@
 ﻿use super::packet::*;
+use serde_json::json;
 use tokio::io::Result;
 use uuid::Uuid;
 
@@ -55,6 +56,17 @@ pub struct LoginDisconnectPacket {
     pub reason: String,
 }
 
+impl LoginDisconnectPacket {
+    pub(crate) fn new(txt: String) -> Self {
+        LoginDisconnectPacket {
+            reason: json!({
+                "text": txt
+            })
+            .to_string(),
+        }
+    }
+}
+
 impl Packet for LoginDisconnectPacket {
     fn read_from_buffer(buffer: &mut MinecraftPacketBuffer) -> Result<Self> {
         let reason = buffer.read_string()?;
@@ -62,6 +74,7 @@ impl Packet for LoginDisconnectPacket {
     }
 
     fn write_to_buffer(&self, buffer: &mut MinecraftPacketBuffer) -> Result<()> {
+        buffer.write_varint(Self::packet_id());
         buffer.write_string(&self.reason);
         Ok(())
     }

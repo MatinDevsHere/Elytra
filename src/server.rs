@@ -1,6 +1,6 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::handshake::*;
-use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
+use crate::protocol::login::{LoginDisconnectPacket, LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
@@ -79,12 +79,15 @@ async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> 
                     Debug,
                 );
 
-                // Create login success response
-                let login_success_packet = LoginSuccessPacket::new(login_start.username);
-                // Use the new helper to send the packet:
-                send_packet(login_success_packet, &mut socket).await?;
+                // Create disconnect packet instead of login success
+                let disconnect_packet = LoginDisconnectPacket::new(
+                    "Hi there!".to_string(),
+                );
 
-                log("Login success response sent".to_string(), Debug);
+                // Send the disconnect packet
+                send_packet(disconnect_packet, &mut socket).await?;
+
+                log(format!("Sent disconnect packet to {}", login_start.username), Debug);
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),
