@@ -27,13 +27,13 @@ async fn handle_connection(mut socket: TcpStream) {
     let mut buffer = [0u8; 1024];
     match socket.read(&mut buffer).await {
         Ok(size) if size > 0 => {
-            log(format!("Received {} bytes", size), Info);
-            log(format!("Received packet: {:?}", &buffer[..size]), Info);
+            log(format!("Received {} bytes", size), Debug);
+            log(format!("Received packet: {:?}", &buffer[..size]), Debug);
 
             let mut packet_buffer = MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
             match HandshakePacket::read(&mut packet_buffer) {
                 Ok(handshake) => {
-                    log(format!("Received handshake: {:?}", handshake), Info);
+                    log(format!("Received handshake: {:?}", handshake), Debug);
                     if let Err(handshake_error) = handle_handshake(socket, handshake).await {
                         log(
                             format!("Failed to handle handshake: {}", handshake_error),
