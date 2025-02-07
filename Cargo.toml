@@ -9,8 +9,8 @@ edition = "2021"
 # TODO: "full" should be replaced with only needed features
 tokio = { version = "1.43.0", features = ["full"] }
 libc = "0.2.169"
-byteorder = "1.5.0"
 serde_json = "1.0.138"
+uuid = { version = "1.13.1", features = ["v3"] }
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"

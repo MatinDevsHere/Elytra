@@ -1,5 +1,6 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::handshake::*;
+use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
@@ -73,10 +74,50 @@ async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> 
                 .buffer
                 .extend_from_slice(&response_buffer.buffer);
 
+            log(
+                format!(
+                    "Sending status response packet with length: {}",
+                    packet_with_length.buffer.len()
+                ),
+                Debug,
+            );
             socket.write_all(&packet_with_length.buffer).await?;
         }
         // Login request
-        2 => {}
+        2 => {
+            let mut raw_buffer = [0u8; 1024];
+            socket.read(&mut raw_buffer).await?;
+
+            let mut packet_buffer = MinecraftPacketBuffer::from_bytes(raw_buffer.to_vec());
+            if let Ok(login_start) = LoginStartPacket::read(&mut packet_buffer) {
+                log(
+                    format!("Player {} attempting to login", login_start.username),
+                    Debug,
+                );
+
+                // Create login success response
+                let login_success = LoginSuccessPacket::new(login_start.username);
+                let mut response_buffer = MinecraftPacketBuffer::new();
+                login_success.write(&mut response_buffer)?;
+
+                // Write packet with length prefix
+                let mut packet_with_length = MinecraftPacketBuffer::new();
+                packet_with_length.write_varint(response_buffer.buffer.len() as i32);
+                packet_with_length
+                    .buffer
+                    .extend_from_slice(&response_buffer.buffer);
+
+                log(
+                    format!(
+                        "Sending login success packet with length: {}",
+                        packet_with_length.buffer.len()
+                    ),
+                    Debug,
+                );
+                socket.write_all(&packet_with_length.buffer).await?;
+                log("Login success response sent".to_string(), Debug);
+            }
+        }
         _ => panic!("Unknown next state: {}", handshake.next_state),
     }
     Ok(())
