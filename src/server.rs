@@ -1,7 +1,10 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::handshake::*;
 use crate::protocol::packet::*;
-use tokio::io::AsyncReadExt;
+use crate::protocol::status::StatusResponsePacket;
+use serde_json::json;
+use tokio::io;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use LogSeverity::*;
 
@@ -51,4 +54,55 @@ async fn handle_connection(mut socket: TcpStream) {
             Error,
         ),
     }
+}
+
+/// Handles the handshake packet next state
+async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> io::Result<()> {
+    match handshake.next_state {
+        1 => {
+            // Wait for the status request packet
+            let mut buffer = [0u8; 1024];
+            socket.read(&mut buffer).await?;
+
+            // Build and send status response
+            let status_json = json!({
+                "version": {
+                    "name": "1.16.5",
+                    "protocol": 754
+                },
+                "players": {
+                    "max": 100,
+                    "online": 0,
+                    "sample": []
+                },
+                "description": {
+                    "text": "Elytra Server"
+                }
+            });
+
+            let response = StatusResponsePacket {
+                response_json: status_json.to_string(),
+            };
+
+            let mut packet_buffer = MinecraftPacketBuffer::new();
+            response.write(&mut packet_buffer)?;
+
+            // Write length prefix and packet data
+            let mut final_buffer = MinecraftPacketBuffer::new();
+            final_buffer.write_varint(packet_buffer.buffer.len() as i32);
+            final_buffer.buffer.extend_from_slice(&packet_buffer.buffer);
+
+            socket.write_all(&final_buffer.buffer).await?;
+        }
+        2 => {
+            // Handle login state
+            let mut response = MinecraftPacketBuffer::new();
+            response.write_varint(0x00);
+            socket.write_all(&response.buffer).await?;
+        }
+        _ => {
+            panic!("Unknown next state: {}", handshake.next_state);
+        }
+    }
+    Ok(())
 }
