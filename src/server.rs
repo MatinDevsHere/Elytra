@@ -2,7 +2,6 @@
 use crate::protocol::handshake::*;
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
-use serde_json::json;
 use tokio::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -59,50 +58,26 @@ async fn handle_connection(mut socket: TcpStream) {
 /// Handles the handshake packet next state
 async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> io::Result<()> {
     match handshake.next_state {
+        // Status request
         1 => {
-            // Wait for the status request packet
-            let mut buffer = [0u8; 1024];
-            socket.read(&mut buffer).await?;
+            let mut raw_buffer = [0u8; 1024];
+            socket.read(&mut raw_buffer).await?;
 
-            // Build and send status response
-            let status_json = json!({
-                "version": {
-                    "name": "1.16.5",
-                    "protocol": 754
-                },
-                "players": {
-                    "max": 100,
-                    "online": 0,
-                    "sample": []
-                },
-                "description": {
-                    "text": "Elytra Server"
-                }
-            });
+            let response = StatusResponsePacket::new();
+            let mut response_buffer = MinecraftPacketBuffer::new();
+            response.write(&mut response_buffer)?;
 
-            let response = StatusResponsePacket {
-                response_json: status_json.to_string(),
-            };
+            let mut packet_with_length = MinecraftPacketBuffer::new();
+            packet_with_length.write_varint(response_buffer.buffer.len() as i32);
+            packet_with_length
+                .buffer
+                .extend_from_slice(&response_buffer.buffer);
 
-            let mut packet_buffer = MinecraftPacketBuffer::new();
-            response.write(&mut packet_buffer)?;
-
-            // Write length prefix and packet data
-            let mut final_buffer = MinecraftPacketBuffer::new();
-            final_buffer.write_varint(packet_buffer.buffer.len() as i32);
-            final_buffer.buffer.extend_from_slice(&packet_buffer.buffer);
-
-            socket.write_all(&final_buffer.buffer).await?;
+            socket.write_all(&packet_with_length.buffer).await?;
         }
-        2 => {
-            // Handle login state
-            let mut response = MinecraftPacketBuffer::new();
-            response.write_varint(0x00);
-            socket.write_all(&response.buffer).await?;
-        }
-        _ => {
-            panic!("Unknown next state: {}", handshake.next_state);
-        }
+        // Login request
+        2 => {}
+        _ => panic!("Unknown next state: {}", handshake.next_state),
     }
     Ok(())
 }
