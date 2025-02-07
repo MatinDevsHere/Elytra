@@ -7,12 +7,6 @@ pub trait Packet {
         0x00
     }
 
-    /// Writes the packet to the buffer. Default implementation is used for client-only packets, as
-    /// they don't need to be written to the buffer.
-    fn write(&self, _buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
-        unimplemented!("Server-bound packets don't need write")
-    }
-
     /// Reads the packet from the buffer. Default implementation is used for server-only packets, as
     /// they don't need to be read from the buffer.
     fn read(_buffer: &mut MinecraftPacketBuffer) -> io::Result<Self>
@@ -20,6 +14,12 @@ pub trait Packet {
         Self: Sized,
     {
         unimplemented!("Client-bound packets don't need read")
+    }
+
+    /// Writes the packet to the buffer. Default implementation is used for client-only packets, as
+    /// they don't need to be written to the buffer.
+    fn write(&self, _buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
+        unimplemented!("Server-bound packets don't need write")
     }
 }
 
