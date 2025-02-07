@@ -47,8 +47,6 @@ impl Packet for LoginSuccessPacket {
         buffer.write_varint(Self::packet_id());
         buffer.write_uuid(self.uuid);
         buffer.write_string(&self.username);
-        // Empty properties array as we're in offline mode
-        buffer.write_varint(0);
         Ok(())
     }
 }
