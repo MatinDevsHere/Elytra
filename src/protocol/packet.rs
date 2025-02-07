@@ -141,6 +141,26 @@ impl MinecraftPacketBuffer {
         })
     }
 
+    /// Writes a UUID to the buffer.
+    /// The UUID is written as two longs in big-endian order.
+    pub fn write_uuid(&mut self, value: uuid::Uuid) {
+        self.buffer.extend_from_slice(value.as_bytes());
+    }
+
+    /// Reads a UUID from the buffer.
+    /// The UUID is read as two longs in big-endian order.
+    pub fn read_uuid(&mut self) -> io::Result<uuid::Uuid> {
+        if self.cursor + 16 > self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read UUID",
+            ));
+        }
+        let bytes = &self.buffer[self.cursor..self.cursor + 16];
+        self.cursor += 16;
+        Ok(uuid::Uuid::from_slice(bytes).unwrap())
+    }
+
     // Write an u16 in network (big-endian) order.
     pub fn write_u16(&mut self, value: u16) {
         self.buffer.push((value >> 8) as u8);
