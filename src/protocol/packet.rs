@@ -1,15 +1,17 @@
 use std::io::{self};
+use tokio::io::AsyncWriteExt;
+use tokio::net::TcpStream;
 
 /// Packet trait. Contains the packet ID and the functions to write and read the packet.
 pub trait Packet {
     /// Packet ID
-    fn packet_id() -> i32 {
+    fn packet_id() -> i32 where Self: Sized {
         0x00
     }
 
     /// Reads the packet from the buffer. Default implementation is used for server-only packets, as
     /// they don't need to be read from the buffer.
-    fn read(_buffer: &mut MinecraftPacketBuffer) -> io::Result<Self>
+    fn read_from_buffer(_buffer: &mut MinecraftPacketBuffer) -> io::Result<Self>
     where
         Self: Sized,
     {
@@ -18,10 +20,24 @@ pub trait Packet {
 
     /// Writes the packet to the buffer. Default implementation is used for client-only packets, as
     /// they don't need to be written to the buffer.
-    fn write(&self, _buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
+    fn write_to_buffer(&self, _buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
         unimplemented!("Server-bound packets don't need write")
     }
 }
+
+    /// Sends a packet to the client
+   pub async fn send_packet<T: Packet>(packet: T, socket: &mut TcpStream) -> io::Result<()> {
+        let mut response_buffer = MinecraftPacketBuffer::new();
+        packet.write_to_buffer(&mut response_buffer)?;
+
+        let mut packet_with_length = MinecraftPacketBuffer::new();
+        packet_with_length.write_varint(response_buffer.buffer.len() as i32);
+        packet_with_length.buffer.extend_from_slice(&response_buffer.buffer);
+
+        socket.write_all(&packet_with_length.buffer).await?;
+
+        Ok(())
+    }
 
 /// Minecraft packet buffer. Contains the buffer and the cursor.
 /// The cursor is used to keep track of the current position in the buffer.

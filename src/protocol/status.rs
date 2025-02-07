@@ -6,7 +6,7 @@ use tokio::io::*;
 pub struct StatusRequestPacket;
 
 impl Packet for StatusRequestPacket {
-    fn read(_buffer: &mut MinecraftPacketBuffer) -> std::io::Result<Self>
+    fn read_from_buffer(_buffer: &mut MinecraftPacketBuffer) -> std::io::Result<Self>
     where
         Self: Sized,
     {
@@ -43,7 +43,7 @@ impl StatusResponsePacket {
 }
 
 impl Packet for StatusResponsePacket {
-    fn write(&self, buffer: &mut MinecraftPacketBuffer) -> Result<()> {
+    fn write_to_buffer(&self, buffer: &mut MinecraftPacketBuffer) -> Result<()> {
         buffer.write_varint(Self::packet_id());
         buffer.write_string(&self.response_json);
         Ok(())

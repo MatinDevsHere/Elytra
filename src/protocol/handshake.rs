@@ -18,7 +18,7 @@ impl Packet for HandshakePacket {
     }
 
     /// Writes the packet to the buffer
-    fn write(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
+    fn write_to_buffer(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
         buffer.write_varint(self.protocol_version);
         buffer.write_string(&self.server_address);
         buffer.write_u16(self.server_port);
@@ -27,7 +27,7 @@ impl Packet for HandshakePacket {
     }
 
     /// Reads the packet from the buffer
-    fn read(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> {
+    fn read_from_buffer(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> {
         let _packet_length = buffer.read_varint()?;
         let packet_id = buffer.read_varint()?;
 
