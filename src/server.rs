@@ -1,6 +1,7 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::handshake::*;
-use crate::protocol::login::{LoginDisconnectPacket, LoginStartPacket};
+use crate::protocol::join_game::JoinGamePacket;
+use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
@@ -78,23 +79,23 @@ async fn handle_handshake_next_state(
         2 => {
             socket.read(&mut raw_buffer).await?;
 
-            let mut packet_buffer = MinecraftPacketBuffer::from_bytes(raw_buffer.to_vec());
-            if let Ok(login_start) = LoginStartPacket::read_from_buffer(&mut packet_buffer) {
+            let mut login_start_packet_buffer =
+                MinecraftPacketBuffer::from_bytes(raw_buffer.to_vec());
+
+            if let Ok(login_start) =
+                LoginStartPacket::read_from_buffer(&mut login_start_packet_buffer)
+            {
                 log(
                     format!("Player {} attempting to login", login_start.username),
                     Debug,
                 );
 
-                // Create disconnect packet instead of login success
-                let disconnect_packet = LoginDisconnectPacket::new("Hi there!".to_string());
+                let login_success_packet = LoginSuccessPacket::new(login_start.username);
+                send_packet(login_success_packet, &mut socket).await?;
 
-                // Send the disconnect packet
-                send_packet(disconnect_packet, &mut socket).await?;
-
-                log(
-                    format!("Sent disconnect packet to {}", login_start.username),
-                    Debug,
-                );
+                let join_game_packet_buffer =
+                    JoinGamePacket::new(1, vec!["wow".to_owned()], "main".to_owned());
+                send_packet(join_game_packet_buffer, &mut socket).await?;
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),
