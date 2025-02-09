@@ -65,7 +65,6 @@ async fn handle_handshake_next_state(
     match handshake.next_state {
         // Status request
         1 => {
-            let mut raw_buffer = [0u8; 1024];
             socket.read(&mut raw_buffer).await?;
 
             let response = StatusResponsePacket::new();
@@ -73,7 +72,6 @@ async fn handle_handshake_next_state(
         }
         // Login request
         2 => {
-            let mut raw_buffer = [0u8; 1024];
             socket.read(&mut raw_buffer).await?;
 
             let mut packet_buffer = MinecraftPacketBuffer::from_bytes(raw_buffer.to_vec());
