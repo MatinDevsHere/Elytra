@@ -44,7 +44,7 @@ impl Tag {
     pub fn read<R: Read>(reader: &mut R) -> io::Result<(String, Tag)> {
         let type_id = reader.read_u8()?;
         if type_id == 0 {
-            return Ok(("".to_string(), Tag::End));
+            return Ok(("".to_owned(), Tag::End));
         }
 
         let name_length = reader.read_u16::<BigEndian>()?;
