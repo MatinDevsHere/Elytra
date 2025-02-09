@@ -1,9 +1,5 @@
-use logger::log;
-use logger::LogSeverity::Info;
-
-mod logger;
-mod protocol;
-mod server;
+use elytra::logger::{log, LogSeverity::Info};
+use elytra::server;
 
 #[tokio::main]
 async fn main() {
