@@ -57,7 +57,11 @@ async fn handle_connection(mut socket: TcpStream) {
 }
 
 /// Handles the handshake packet next state
-async fn handle_handshake(mut socket: TcpStream, handshake: HandshakePacket) -> io::Result<()> {
+async fn handle_handshake_next_state(
+    mut socket: TcpStream,
+    handshake: HandshakePacket,
+) -> io::Result<()> {
+    let mut raw_buffer = [0u8; 1024];
     match handshake.next_state {
         // Status request
         1 => {
