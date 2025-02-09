@@ -5,7 +5,10 @@ use tokio::net::TcpStream;
 /// Packet trait. Contains the packet ID and the functions to write and read the packet.
 pub trait Packet {
     /// Packet ID
-    fn packet_id() -> i32 where Self: Sized {
+    fn packet_id() -> i32
+    where
+        Self: Sized,
+    {
         0x00
     }
 
@@ -25,19 +28,21 @@ pub trait Packet {
     }
 }
 
-    /// Sends a packet to the client
-   pub async fn send_packet<T: Packet>(packet: T, socket: &mut TcpStream) -> io::Result<()> {
-        let mut response_buffer = MinecraftPacketBuffer::new();
-        packet.write_to_buffer(&mut response_buffer)?;
+/// Sends a packet to the client
+pub async fn send_packet<T: Packet>(packet: T, socket: &mut TcpStream) -> io::Result<()> {
+    let mut response_buffer = MinecraftPacketBuffer::new();
+    packet.write_to_buffer(&mut response_buffer)?;
 
-        let mut packet_with_length = MinecraftPacketBuffer::new();
-        packet_with_length.write_varint(response_buffer.buffer.len() as i32);
-        packet_with_length.buffer.extend_from_slice(&response_buffer.buffer);
+    let mut packet_with_length = MinecraftPacketBuffer::new();
+    packet_with_length.write_varint(response_buffer.buffer.len() as i32);
+    packet_with_length
+        .buffer
+        .extend_from_slice(&response_buffer.buffer);
 
-        socket.write_all(&packet_with_length.buffer).await?;
+    socket.write_all(&packet_with_length.buffer).await?;
 
-        Ok(())
-    }
+    Ok(())
+}
 
 /// Minecraft packet buffer. Contains the buffer and the cursor.
 /// The cursor is used to keep track of the current position in the buffer.
@@ -195,5 +200,72 @@ impl MinecraftPacketBuffer {
         let lo = self.buffer[self.cursor + 1] as u16;
         self.cursor += 2;
         Ok((hi << 8) | lo)
+    }
+
+    pub fn write_bool(&mut self, value: bool) {
+        self.buffer.push(if value { 1 } else { 0 });
+    }
+
+    pub fn read_bool(&mut self) -> io::Result<bool> {
+        if self.cursor >= self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read bool",
+            ));
+        }
+        let value = self.buffer[self.cursor] != 0;
+        self.cursor += 1;
+        Ok(value)
+    }
+
+    pub fn write_i8(&mut self, value: i8) {
+        self.buffer.push(value as u8);
+    }
+
+    pub fn read_i8(&mut self) -> io::Result<i8> {
+        if self.cursor >= self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read i8",
+            ));
+        }
+        let value = self.buffer[self.cursor] as i8;
+        self.cursor += 1;
+        Ok(value)
+    }
+
+    pub fn write_u8(&mut self, value: u8) {
+        self.buffer.push(value);
+    }
+
+    pub fn read_u8(&mut self) -> io::Result<u8> {
+        if self.cursor >= self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read u8",
+            ));
+        }
+        let value = self.buffer[self.cursor];
+        self.cursor += 1;
+        Ok(value)
+    }
+
+    pub fn write_i32(&mut self, value: i32) {
+        self.buffer.extend_from_slice(&value.to_be_bytes());
+    }
+
+    pub fn write_i64(&mut self, value: i64) {
+        self.buffer.extend_from_slice(&value.to_be_bytes());
+    }
+}
+
+impl std::io::Write for MinecraftPacketBuffer {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.buffer.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
     }
 }
