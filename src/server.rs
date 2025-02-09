@@ -1,6 +1,6 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::handshake::*;
-use crate::protocol::login::{LoginDisconnectPacket, LoginStartPacket, LoginSuccessPacket};
+use crate::protocol::login::{LoginDisconnectPacket, LoginStartPacket};
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
@@ -11,6 +11,7 @@ use LogSeverity::*;
 /// Starts the server and listens for incoming connections.
 /// The server will listen on port 25565 by default.
 pub async fn run() {
+    // TODO: Should be an option for manually setting IP and Port
     let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
     log("Listening on port 25565".to_string(), Info);
 
@@ -31,11 +32,14 @@ async fn handle_connection(mut socket: TcpStream) {
             log(format!("Received {} bytes", size), Debug);
             log(format!("Received packet: {:?}", &buffer[..size]), Debug);
 
-            let mut packet_buffer = MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
-            match HandshakePacket::read_from_buffer(&mut packet_buffer) {
-                Ok(handshake) => {
-                    log(format!("Received handshake: {:?}", handshake), Debug);
-                    if let Err(handshake_error) = handle_handshake(socket, handshake).await {
+            let mut handshake_packet_buffer =
+                MinecraftPacketBuffer::from_bytes(buffer[..size].to_vec());
+            match HandshakePacket::read_from_buffer(&mut handshake_packet_buffer) {
+                Ok(handshake_packet) => {
+                    log(format!("Received handshake: {:?}", handshake_packet), Debug);
+                    if let Err(handshake_error) =
+                        handle_handshake_next_state(socket, handshake_packet).await
+                    {
                         log(
                             format!("Failed to handle handshake: {}", handshake_error),
                             Error,
@@ -82,14 +86,15 @@ async fn handle_handshake_next_state(
                 );
 
                 // Create disconnect packet instead of login success
-                let disconnect_packet = LoginDisconnectPacket::new(
-                    "Hi there!".to_string(),
-                );
+                let disconnect_packet = LoginDisconnectPacket::new("Hi there!".to_string());
 
                 // Send the disconnect packet
                 send_packet(disconnect_packet, &mut socket).await?;
 
-                log(format!("Sent disconnect packet to {}", login_start.username), Debug);
+                log(
+                    format!("Sent disconnect packet to {}", login_start.username),
+                    Debug,
+                );
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),
