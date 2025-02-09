@@ -9,6 +9,9 @@ system.
 - **Asynchronous Networking:** Uses Tokio for non-blocking I/O.
 - **Packet Protocol:** Implements Minecraft-like packets including handshake and status response packets.
 
+## Why 1.16.5?
+Because 1.8.9 is too old, and newer versions suck.
+
 ## State of the project
 
 `undefined`. Elytra is so new that it even doesn't have a status yet. There's no way you can use it currently for
