@@ -3,6 +3,7 @@ use crate::protocol::handshake::*;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
+use crate::protocol::play::PlayerPositionAndLookPacket;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
 use tokio::io::AsyncReadExt;
@@ -93,9 +94,16 @@ async fn handle_handshake_next_state(
                 let login_success_packet = LoginSuccessPacket::new(login_start.username);
                 send_packet(login_success_packet, &mut socket).await?;
 
-                let join_game_packet_buffer =
-                    JoinGamePacket::new(1, vec!["wow".to_owned()], "main".to_owned());
-                send_packet(join_game_packet_buffer, &mut socket).await?;
+                let join_game_packet = JoinGamePacket::new(
+                    1,
+                    vec!["minecraft:overworld".to_owned()],
+                    "minecraft:overworld".to_owned(),
+                );
+                send_packet(join_game_packet, &mut socket).await?;
+
+                // Send initial spawn position
+                let position_packet = PlayerPositionAndLookPacket::new(0.0, 64.0, 0.0, 0.0, 0.0);
+                send_packet(position_packet, &mut socket).await?;
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),
