@@ -91,7 +91,7 @@ fn default_dimension_codec() -> Tag {
         Tag::String("minecraft:dimension_type".to_owned()),
     );
 
-    let mut dimension_type_value = HashMap::new();
+    let mut dimension_entries = Vec::new();
     {
         let mut overworld = HashMap::new();
         overworld.insert("piglin_safe".to_owned(), Tag::Byte(0));
@@ -114,17 +114,17 @@ fn default_dimension_codec() -> Tag {
         overworld.insert("ultrawarm".to_owned(), Tag::Byte(0));
         overworld.insert("has_ceiling".to_owned(), Tag::Byte(0));
 
-        let mut value = HashMap::new();
-        value.insert(
+        let mut entry = HashMap::new();
+        entry.insert(
             "name".to_owned(),
             Tag::String("minecraft:overworld".to_owned()),
         );
-        value.insert("id".to_owned(), Tag::Int(0));
-        value.insert("element".to_owned(), Tag::Compound(overworld));
+        entry.insert("id".to_owned(), Tag::Int(0));
+        entry.insert("element".to_owned(), Tag::Compound(overworld));
 
-        dimension_type_value.insert("value".to_owned(), Tag::List(vec![Tag::Compound(value)]));
+        dimension_entries.push(Tag::Compound(entry));
     }
-    dimension_type.insert("value".to_owned(), Tag::Compound(dimension_type_value));
+    dimension_type.insert("value".to_owned(), Tag::List(dimension_entries));
     root.insert(
         "minecraft:dimension_type".to_owned(),
         Tag::Compound(dimension_type),
@@ -137,7 +137,7 @@ fn default_dimension_codec() -> Tag {
         Tag::String("minecraft:worldgen/biome".to_owned()),
     );
 
-    let mut biome_value = HashMap::new();
+    let mut biome_entries = Vec::new();
     {
         let mut plains = HashMap::new();
         plains.insert("precipitation".to_owned(), Tag::String("rain".to_owned()));
@@ -154,17 +154,17 @@ fn default_dimension_codec() -> Tag {
         effects.insert("water_color".to_owned(), Tag::Int(4159204));
         plains.insert("effects".to_owned(), Tag::Compound(effects));
 
-        let mut value = HashMap::new();
-        value.insert(
+        let mut entry = HashMap::new();
+        entry.insert(
             "name".to_owned(),
             Tag::String("minecraft:plains".to_owned()),
         );
-        value.insert("id".to_owned(), Tag::Int(0));
-        value.insert("element".to_owned(), Tag::Compound(plains));
+        entry.insert("id".to_owned(), Tag::Int(0));
+        entry.insert("element".to_owned(), Tag::Compound(plains));
 
-        biome_value.insert("value".to_owned(), Tag::List(vec![Tag::Compound(value)]));
+        biome_entries.push(Tag::Compound(entry));
     }
-    biome_registry.insert("value".to_owned(), Tag::Compound(biome_value));
+    biome_registry.insert("value".to_owned(), Tag::List(biome_entries));
     root.insert(
         "minecraft:worldgen/biome".to_owned(),
         Tag::Compound(biome_registry),
