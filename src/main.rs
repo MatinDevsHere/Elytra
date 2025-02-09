@@ -7,6 +7,6 @@ mod server;
 
 #[tokio::main]
 async fn main() {
-    log("Elytra init".to_string(), Info);
+    log("Elytra init".to_owned(), Info);
     server::run().await;
 }

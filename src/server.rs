@@ -14,7 +14,7 @@ use LogSeverity::*;
 pub async fn run() {
     // TODO: Should be an option for manually setting IP and Port
     let listener = TcpListener::bind("0.0.0.0:25565").await.unwrap();
-    log("Listening on port 25565".to_string(), Info);
+    log("Listening on port 25565".to_owned(), Info);
 
     loop {
         let (socket, addr) = listener.accept().await.unwrap();
