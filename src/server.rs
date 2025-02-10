@@ -1,11 +1,13 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::client_settings::ClientSettingsPacket;
+use crate::protocol::declare_recipes::DeclareRecipesPacket;
 use crate::protocol::handshake::*;
 use crate::protocol::held_item_change::HeldItemChangePacket;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
 use crate::protocol::status::StatusResponsePacket;
+use crate::protocol::tags::TagsPacket;
 use tokio::io;
 use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
@@ -151,6 +153,9 @@ async fn handle_handshake_next_state(
 
                 let declare_recipes_packet = DeclareRecipesPacket::new();
                 send_packet(declare_recipes_packet, &mut socket).await?;
+
+                let tags_packet = TagsPacket::new();
+                send_packet(tags_packet, &mut socket).await?;
 
                 // After sending join game packet, transition to play state
                 handle_play_state(socket).await?;
