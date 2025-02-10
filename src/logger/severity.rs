@@ -22,3 +22,17 @@ impl Display for LogSeverity {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_log_severity_display() {
+        assert_eq!(format!("{}", LogSeverity::Debug), "DEBUG");
+        assert_eq!(format!("{}", LogSeverity::Info), "INFO");
+        assert_eq!(format!("{}", LogSeverity::Warning), "WARNING");
+        assert_eq!(format!("{}", LogSeverity::Error), "ERROR");
+        assert_eq!(format!("{}", LogSeverity::Fatal), "FATAL");
+    }
+}

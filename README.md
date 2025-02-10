@@ -11,6 +11,9 @@ system.
 - **KISS:** Elytra is probably the simplest Minecraft Server Implementation you'll ever see. Including, but not limited
   to: macros, weird project structure, and webpack (excuse my sanity)
 
+## Why 1.16.5?
+Because 1.8.9 is too old, and newer versions suck.
+
 ## State of the project
 
 `undefined`. Elytra is so new that it even doesn't have a status yet. There's no way you can use it currently for
