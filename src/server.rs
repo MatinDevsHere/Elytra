@@ -1,5 +1,7 @@
 ﻿use crate::logger::{log, LogSeverity};
+use crate::protocol::client_settings::ClientSettingsPacket;
 use crate::protocol::handshake::*;
+use crate::protocol::held_item_change::HeldItemChangePacket;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
@@ -61,6 +63,50 @@ async fn handle_connection(mut socket: TcpStream) {
     }
 }
 
+/// Handles the play state after login and join game
+async fn handle_play_state(mut socket: TcpStream) -> io::Result<()> {
+    let mut raw_buffer = [0u8; 1024];
+
+    loop {
+        match socket.read(&mut raw_buffer).await {
+            Ok(size) if size > 0 => {
+                let mut packet_buffer =
+                    MinecraftPacketBuffer::from_bytes(raw_buffer[..size].to_vec());
+                let packet_id = packet_buffer.read_varint()?;
+
+                match packet_id {
+                    // Client Settings packet
+                    0x05 => {
+                        if let Ok(settings) =
+                            ClientSettingsPacket::read_from_buffer(&mut packet_buffer)
+                        {
+                            log(
+                                format!(
+                                    "Received packet 0x{:02x} (Client Settings): {:?}",
+                                    packet_id, settings
+                                ),
+                                Debug,
+                            );
+                        }
+                    }
+                    _ => {
+                        log(
+                            format!("Received unknown packet 0x{:02x}", packet_id),
+                            Debug,
+                        );
+                    }
+                }
+            }
+            Ok(_) => break, // Connection closed
+            Err(e) => {
+                log(format!("Error reading from socket: {}", e), Error);
+                break;
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Handles the handshake packet next state
 async fn handle_handshake_next_state(
     mut socket: TcpStream,
@@ -99,6 +145,12 @@ async fn handle_handshake_next_state(
                     "minecraft:overworld".to_owned(),
                 );
                 send_packet(join_game_packet, &mut socket).await?;
+
+                let held_item_change_packet = HeldItemChangePacket::new(0);
+                send_packet(held_item_change_packet, &mut socket).await?;
+
+                // After sending join game packet, transition to play state
+                handle_play_state(socket).await?;
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),
