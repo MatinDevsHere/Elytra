@@ -3,11 +3,12 @@ use crate::protocol::handshake::*;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
-use crate::protocol::play::PlayerPositionAndLookPacket;
 use crate::protocol::status::StatusResponsePacket;
+use std::time::Duration;
 use tokio::io;
 use tokio::io::AsyncReadExt;
 use tokio::net::{TcpListener, TcpStream};
+use tokio::time::sleep;
 use LogSeverity::*;
 
 /// Starts the server and listens for incoming connections.
@@ -101,9 +102,8 @@ async fn handle_handshake_next_state(
                 );
                 send_packet(join_game_packet, &mut socket).await?;
 
-                // Send initial spawn position
-                let position_packet = PlayerPositionAndLookPacket::new(0.0, 64.0, 0.0, 0.0, 0.0);
-                send_packet(position_packet, &mut socket).await?;
+                // Sleep the current thread
+                sleep(Duration::from_secs(10)).await;
             }
         }
         _ => panic!("Unknown next state: {}", handshake.next_state),

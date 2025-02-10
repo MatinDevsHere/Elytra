@@ -150,6 +150,9 @@ fn default_dimension_codec() -> Tag {
         Tag::String("none".to_string()),
     );
     plains_details.insert("downfall".to_string(), Tag::Float(0.4));
+    plains_details.insert("scale".to_string(), Tag::Float(0.1));
+    plains_details.insert("depth".to_string(), Tag::Float(0.125));
+    plains_details.insert("category".to_string(), Tag::String("plains".to_string()));
 
     let mut effects = HashMap::new();
     effects.insert("sky_color".to_string(), Tag::Int(7907327));
