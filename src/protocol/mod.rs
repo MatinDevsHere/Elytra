@@ -5,5 +5,5 @@ pub(crate) mod join_game;
 pub mod login;
 pub mod nbt;
 pub mod packet;
-pub mod recipe_types;
+pub mod declare_recipes;
 pub mod status;
