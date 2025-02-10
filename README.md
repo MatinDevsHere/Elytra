@@ -8,6 +8,8 @@ system.
 
 - **Asynchronous Networking:** Uses Tokio for non-blocking I/O.
 - **Packet Protocol:** Implements Minecraft-like packets including handshake and status response packets.
+- **KISS:** Elytra is probably the simplest Minecraft Server Implementation you'll ever see. Including, but not limited
+  to: macros, weird project structure, and webpack (excuse my sanity)
 
 ## State of the project
 
