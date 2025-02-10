@@ -149,6 +149,9 @@ async fn handle_handshake_next_state(
                 let held_item_change_packet = HeldItemChangePacket::new(0);
                 send_packet(held_item_change_packet, &mut socket).await?;
 
+                let declare_recipes_packet = DeclareRecipesPacket::new();
+                send_packet(declare_recipes_packet, &mut socket).await?;
+
                 // After sending join game packet, transition to play state
                 handle_play_state(socket).await?;
             }
