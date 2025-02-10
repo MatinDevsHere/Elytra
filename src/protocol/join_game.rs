@@ -89,55 +89,105 @@ impl Packet for JoinGamePacket {
 fn default_dimension_codec() -> Tag {
     let mut compound = HashMap::new();
 
-    // Create the "minecraft:dimension_type" entry.
-    let mut dimension_type_value = HashMap::new();
-    {
-        let mut overworld_details = HashMap::new();
-        // Minimal set of properties; expand as needed.
-        overworld_details.insert("piglin_safe".to_string(), Tag::Byte(1));
-        overworld_details.insert("natural".to_string(), Tag::Byte(0));
-        overworld_details.insert("ambient_light".to_string(), Tag::Float(1.0));
-        overworld_details.insert("fixed_time".to_string(), Tag::Long(0));
-        overworld_details.insert("infiniburn".to_string(), Tag::String("".to_string()));
-        overworld_details.insert("respawn_anchor_works".to_string(), Tag::Byte(0));
-        overworld_details.insert("has_skylight".to_string(), Tag::Byte(1));
-        overworld_details.insert("bed_works".to_string(), Tag::Byte(0));
-        overworld_details.insert(
-            "effects".to_string(),
-            Tag::String("minecraft:overworld".to_string()),
-        );
-        overworld_details.insert("has_raids".to_string(), Tag::Byte(0));
-        overworld_details.insert("logical_height".to_string(), Tag::Int(256));
-        overworld_details.insert("coordinate_scale".to_string(), Tag::Float(1.0));
-        overworld_details.insert("ultrawarm".to_string(), Tag::Byte(0));
-        overworld_details.insert("has_ceiling".to_string(), Tag::Byte(0));
-        dimension_type_value.insert(
-            "minecraft:overworld".to_string(),
-            Tag::Compound(overworld_details),
-        );
-    }
-    compound.insert(
-        "minecraft:dimension_type".to_string(),
-        Tag::Compound(dimension_type_value),
+    // Create the dimension registry
+    let mut dimension_registry = HashMap::new();
+    dimension_registry.insert(
+        "type".to_string(),
+        Tag::String("minecraft:dimension_type".to_string()),
     );
 
-    // Create the "minecraft:worldgen/biome" entry.
-    let mut biome_value = HashMap::new();
-    {
-        let mut plains_biome = HashMap::new();
-        // Minimal biome properties.
-        plains_biome.insert("precipitation".to_string(), Tag::String("none".to_string()));
-        let mut effects = HashMap::new();
-        effects.insert("sky_color".to_string(), Tag::Int(7842047));
-        effects.insert("water_fog_color".to_string(), Tag::Int(329011));
-        effects.insert("water_color".to_string(), Tag::Int(4159204));
-        effects.insert("fog_color".to_string(), Tag::Int(12638463));
-        plains_biome.insert("effects".to_string(), Tag::Compound(effects));
-        biome_value.insert("minecraft:plains".to_string(), Tag::Compound(plains_biome));
-    }
+    let mut overworld_details = HashMap::new();
+    overworld_details.insert("piglin_safe".to_string(), Tag::Byte(0));
+    overworld_details.insert("natural".to_string(), Tag::Byte(1));
+    overworld_details.insert("ambient_light".to_string(), Tag::Float(0.0));
+    overworld_details.insert(
+        "infiniburn".to_string(),
+        Tag::String("minecraft:infiniburn_overworld".to_string()),
+    );
+    overworld_details.insert("respawn_anchor_works".to_string(), Tag::Byte(0));
+    overworld_details.insert("has_skylight".to_string(), Tag::Byte(1));
+    overworld_details.insert("bed_works".to_string(), Tag::Byte(1));
+    overworld_details.insert(
+        "effects".to_string(),
+        Tag::String("minecraft:overworld".to_string()),
+    );
+    overworld_details.insert("has_raids".to_string(), Tag::Byte(1));
+    overworld_details.insert("logical_height".to_string(), Tag::Int(256));
+    overworld_details.insert("coordinate_scale".to_string(), Tag::Float(1.0));
+    overworld_details.insert("ultrawarm".to_string(), Tag::Byte(0));
+    overworld_details.insert("has_ceiling".to_string(), Tag::Byte(0));
+
+    let mut overworld_entry = HashMap::new();
+    overworld_entry.insert(
+        "name".to_string(),
+        Tag::String("minecraft:overworld".to_string()),
+    );
+    overworld_entry.insert("id".to_string(), Tag::Int(0));
+    overworld_entry.insert("element".to_string(), Tag::Compound(overworld_details));
+
+    // Create direct list of dimension entries
+    dimension_registry.insert(
+        "value".to_string(),
+        Tag::List(vec![Tag::Compound(overworld_entry)]),
+    );
+    compound.insert(
+        "minecraft:dimension_type".to_string(),
+        Tag::Compound(dimension_registry),
+    );
+
+    // Create the biome registry
+    let mut biome_registry = HashMap::new();
+    biome_registry.insert(
+        "type".to_string(),
+        Tag::String("minecraft:worldgen/biome".to_string()),
+    );
+
+    let mut plains_details = HashMap::new();
+    plains_details.insert("precipitation".to_string(), Tag::String("rain".to_string()));
+    plains_details.insert("temperature".to_string(), Tag::Float(0.8));
+    plains_details.insert(
+        "temperature_modifier".to_string(),
+        Tag::String("none".to_string()),
+    );
+    plains_details.insert("downfall".to_string(), Tag::Float(0.4));
+
+    let mut effects = HashMap::new();
+    effects.insert("sky_color".to_string(), Tag::Int(7907327));
+    effects.insert("water_fog_color".to_string(), Tag::Int(329011));
+    effects.insert("fog_color".to_string(), Tag::Int(12638463));
+    effects.insert("water_color".to_string(), Tag::Int(4159204));
+    effects.insert(
+        "mood_sound".to_string(),
+        Tag::Compound({
+            let mut mood = HashMap::new();
+            mood.insert("tick_delay".to_string(), Tag::Int(6000));
+            mood.insert("offset".to_string(), Tag::Double(2.0));
+            mood.insert(
+                "sound".to_string(),
+                Tag::String("minecraft:ambient.cave".to_string()),
+            );
+            mood.insert("block_search_extent".to_string(), Tag::Int(8));
+            mood
+        }),
+    );
+    plains_details.insert("effects".to_string(), Tag::Compound(effects));
+
+    let mut plains_entry = HashMap::new();
+    plains_entry.insert(
+        "name".to_string(),
+        Tag::String("minecraft:plains".to_string()),
+    );
+    plains_entry.insert("id".to_string(), Tag::Int(1));
+    plains_entry.insert("element".to_string(), Tag::Compound(plains_details));
+
+    // Create direct list of biome entries
+    biome_registry.insert(
+        "value".to_string(),
+        Tag::List(vec![Tag::Compound(plains_entry)]),
+    );
     compound.insert(
         "minecraft:worldgen/biome".to_string(),
-        Tag::Compound(biome_value),
+        Tag::Compound(biome_registry),
     );
 
     Tag::Compound(compound)
@@ -147,8 +197,29 @@ fn default_dimension_codec() -> Tag {
 /// This example includes keys such as "min_y", "height", and "logical_height".
 fn default_dimension() -> Tag {
     let mut compound = HashMap::new();
+
+    // Add the required dimension properties
+    compound.insert("piglin_safe".to_string(), Tag::Byte(0));
+    compound.insert("natural".to_string(), Tag::Byte(1));
+    compound.insert("ambient_light".to_string(), Tag::Float(0.0));
+    compound.insert(
+        "infiniburn".to_string(),
+        Tag::String("minecraft:infiniburn_overworld".to_string()),
+    );
+    compound.insert("respawn_anchor_works".to_string(), Tag::Byte(0));
+    compound.insert("has_skylight".to_string(), Tag::Byte(1));
+    compound.insert("bed_works".to_string(), Tag::Byte(1));
+    compound.insert(
+        "effects".to_string(),
+        Tag::String("minecraft:overworld".to_string()),
+    );
+    compound.insert("has_raids".to_string(), Tag::Byte(1));
     compound.insert("min_y".to_string(), Tag::Int(0));
     compound.insert("height".to_string(), Tag::Int(256));
     compound.insert("logical_height".to_string(), Tag::Int(256));
+    compound.insert("coordinate_scale".to_string(), Tag::Float(1.0));
+    compound.insert("ultrawarm".to_string(), Tag::Byte(0));
+    compound.insert("has_ceiling".to_string(), Tag::Byte(0));
+
     Tag::Compound(compound)
 }
