@@ -1,6 +1,6 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::client_settings::ClientSettingsPacket;
-use crate::protocol::declare_commands::DeclareCommandsPacket;
+use crate::protocol::declare_commands::{CommandNode, DeclareCommandsPacket, Parser, StringType};
 use crate::protocol::declare_recipes::DeclareRecipesPacket;
 use crate::protocol::handshake::*;
 use crate::protocol::held_item_change::HeldItemChangePacket;
@@ -109,6 +109,58 @@ async fn handle_play_state(mut socket: TcpStream) -> io::Result<()> {
     Ok(())
 }
 
+/// Creates a command graph with basic commands
+fn create_command_graph() -> DeclareCommandsPacket {
+    let mut declare_commands_packet = DeclareCommandsPacket::new();
+
+    // Add /help command
+    let help_node = CommandNode::new_literal("help", true);
+    let help_index = declare_commands_packet.add_node(help_node);
+
+    // Add /gamemode command with argument
+    let gamemode_node = CommandNode::new_literal("gamemode", false);
+    let gamemode_index = declare_commands_packet.add_node(gamemode_node);
+
+    // Add gamemode argument node (creative, survival, etc)
+    let mut gamemode_arg_node =
+        CommandNode::new_argument("mode", Parser::String(StringType::SingleWord), true);
+    gamemode_arg_node.set_suggestions("minecraft:ask_server");
+    let gamemode_arg_index = declare_commands_packet.add_node(gamemode_arg_node);
+
+    // Add /tp command with target argument
+    let tp_node = CommandNode::new_literal("tp", false);
+    let tp_index = declare_commands_packet.add_node(tp_node);
+
+    // Add target argument for tp command
+    let mut tp_target_node = CommandNode::new_argument(
+        "target",
+        Parser::Entity {
+            single: true,
+            only_players: true,
+        },
+        true,
+    );
+    tp_target_node.set_suggestions("minecraft:ask_server");
+    let tp_target_index = declare_commands_packet.add_node(tp_target_node);
+
+    // Connect the nodes
+    declare_commands_packet.get_root_mut().add_child(help_index);
+    declare_commands_packet
+        .get_root_mut()
+        .add_child(gamemode_index);
+    declare_commands_packet.get_root_mut().add_child(tp_index);
+
+    if let Some(gamemode_node) = declare_commands_packet.get_node_mut(gamemode_index) {
+        gamemode_node.add_child(gamemode_arg_index);
+    }
+
+    if let Some(tp_node) = declare_commands_packet.get_node_mut(tp_index) {
+        tp_node.add_child(tp_target_index);
+    }
+
+    declare_commands_packet
+}
+
 /// Handles the handshake packet next state
 async fn handle_handshake_next_state(
     mut socket: TcpStream,
@@ -154,11 +206,8 @@ async fn handle_handshake_next_state(
                 let declare_recipes_packet = DeclareRecipesPacket::new();
                 send_packet(declare_recipes_packet, &mut socket).await?;
 
-                // TODO: Uncomment if handshake fails
-                // let tags_packet = TagsPacket::new();
-                // send_packet(tags_packet, &mut socket).await?;
-
-                let declare_commands_packet = DeclareCommandsPacket::new();
+                // Send command graph
+                let declare_commands_packet = create_command_graph();
                 send_packet(declare_commands_packet, &mut socket).await?;
 
                 // After sending join game packet, transition to play state
