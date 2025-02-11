@@ -1,4 +1,5 @@
 pub(crate) mod client_settings;
+pub mod declare_commands;
 pub mod declare_recipes;
 pub mod handshake;
 pub(crate) mod held_item_change;

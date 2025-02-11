@@ -1,5 +1,6 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::client_settings::ClientSettingsPacket;
+use crate::protocol::declare_commands::DeclareCommandsPacket;
 use crate::protocol::declare_recipes::DeclareRecipesPacket;
 use crate::protocol::handshake::*;
 use crate::protocol::held_item_change::HeldItemChangePacket;
@@ -156,6 +157,9 @@ async fn handle_handshake_next_state(
                 // TODO: Uncomment if handshake fails
                 // let tags_packet = TagsPacket::new();
                 // send_packet(tags_packet, &mut socket).await?;
+
+                let declare_commands_packet = DeclareCommandsPacket::new();
+                send_packet(declare_commands_packet, &mut socket).await?;
 
                 // After sending join game packet, transition to play state
                 handle_play_state(socket).await?;
