@@ -7,6 +7,7 @@ use crate::protocol::held_item_change::HeldItemChangePacket;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
+use crate::protocol::player_position_and_look::PlayerPositionAndLook;
 use crate::protocol::status::StatusResponsePacket;
 use tokio::io;
 use tokio::io::AsyncReadExt;
@@ -209,6 +210,18 @@ async fn handle_handshake_next_state(
                 // Send command graph
                 let declare_commands_packet = create_command_graph();
                 send_packet(declare_commands_packet, &mut socket).await?;
+
+                // Send initial position and look
+                let player_position = PlayerPositionAndLook::new(
+                    0.0,  // x - spawn at origin
+                    64.0, // y - reasonable spawn height
+                    0.0,  // z - spawn at origin
+                    0.0,  // yaw - looking straight ahead
+                    0.0,  // pitch - looking straight ahead
+                    0,    // flags - all values are absolute
+                    0,    // teleport ID - first teleport
+                );
+                send_packet(player_position, &mut socket).await?;
 
                 // After sending join game packet, transition to play state
                 handle_play_state(socket).await?;

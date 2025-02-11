@@ -257,6 +257,42 @@ impl MinecraftPacketBuffer {
     pub fn write_i64(&mut self, value: i64) {
         self.buffer.extend_from_slice(&value.to_be_bytes());
     }
+
+    pub fn write_f64(&mut self, value: f64) -> io::Result<()> {
+        self.buffer.extend_from_slice(&value.to_be_bytes());
+        Ok(())
+    }
+
+    pub fn read_f64(&mut self) -> io::Result<f64> {
+        if self.cursor + 8 > self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Buffer too short",
+            ));
+        }
+        let mut bytes = [0u8; 8];
+        bytes.copy_from_slice(&self.buffer[self.cursor..self.cursor + 8]);
+        self.cursor += 8;
+        Ok(f64::from_be_bytes(bytes))
+    }
+
+    pub fn write_f32(&mut self, value: f32) -> io::Result<()> {
+        self.buffer.extend_from_slice(&value.to_be_bytes());
+        Ok(())
+    }
+
+    pub fn read_f32(&mut self) -> io::Result<f32> {
+        if self.cursor + 4 > self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Buffer too short",
+            ));
+        }
+        let mut bytes = [0u8; 4];
+        bytes.copy_from_slice(&self.buffer[self.cursor..self.cursor + 4]);
+        self.cursor += 4;
+        Ok(f32::from_be_bytes(bytes))
+    }
 }
 
 impl std::io::Write for MinecraftPacketBuffer {

@@ -7,5 +7,6 @@ pub(crate) mod join_game;
 pub mod login;
 pub mod nbt;
 pub mod packet;
+pub(crate) mod player_position_and_look;
 pub mod status;
 pub mod tags;
