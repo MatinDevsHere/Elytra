@@ -1,9 +1,7 @@
 ﻿use crate::logger::{log, LogSeverity};
 use crate::protocol::client_settings::ClientSettingsPacket;
 use crate::protocol::declare_commands::{CommandNode, DeclareCommandsPacket, Parser, StringType};
-use crate::protocol::declare_recipes::DeclareRecipesPacket;
 use crate::protocol::handshake::*;
-use crate::protocol::held_item_change::HeldItemChangePacket;
 use crate::protocol::join_game::JoinGamePacket;
 use crate::protocol::login::{LoginStartPacket, LoginSuccessPacket};
 use crate::protocol::packet::*;
@@ -201,11 +199,11 @@ async fn handle_handshake_next_state(
                 );
                 send_packet(join_game_packet, &mut socket).await?;
 
-                let held_item_change_packet = HeldItemChangePacket::new(0);
-                send_packet(held_item_change_packet, &mut socket).await?;
+                // let held_item_change_packet = HeldItemChangePacket::new(0);
+                // send_packet(held_item_change_packet, &mut socket).await?;
 
-                let declare_recipes_packet = DeclareRecipesPacket::new();
-                send_packet(declare_recipes_packet, &mut socket).await?;
+                // let declare_recipes_packet = DeclareRecipesPacket::new();
+                // send_packet(declare_recipes_packet, &mut socket).await?;
 
                 // Send command graph
                 let declare_commands_packet = create_command_graph();
