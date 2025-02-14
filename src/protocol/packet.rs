@@ -262,6 +262,19 @@ impl MinecraftPacketBuffer {
         self.buffer.extend_from_slice(&value.to_be_bytes());
     }
 
+    pub fn read_i64(&mut self) -> io::Result<i64> {
+        if self.cursor + 8 > self.buffer.len() {
+            return Err(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes to read i64",
+            ));
+        }
+        let mut bytes = [0u8; 8];
+        bytes.copy_from_slice(&self.buffer[self.cursor..self.cursor + 8]);
+        self.cursor += 8;
+        Ok(i64::from_be_bytes(bytes))
+    }
+
     pub fn write_f64(&mut self, value: f64) -> io::Result<()> {
         self.buffer.extend_from_slice(&value.to_be_bytes());
         Ok(())

@@ -12,14 +12,15 @@ impl Packet for KeepAlivePacket {
     }
 
     fn read_from_buffer(buffer: &mut MinecraftPacketBuffer) -> io::Result<Self> {
+        let _packet_id = buffer.read_varint()?;
         Ok(KeepAlivePacket {
-            keep_alive_id: buffer.read_varint()? as i64,
+            keep_alive_id: buffer.read_i64()?,
         })
     }
 
     fn write_to_buffer(&self, buffer: &mut MinecraftPacketBuffer) -> io::Result<()> {
         buffer.write_varint(Self::packet_id());
-        buffer.write_varint(self.keep_alive_id as i32);
+        buffer.write_i64(self.keep_alive_id);
         Ok(())
     }
 }
