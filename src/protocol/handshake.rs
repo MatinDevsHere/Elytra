@@ -29,12 +29,14 @@ impl Packet for HandshakePacket {
             ));
         }
 
-        Ok(HandshakePacket {
+        let packet = HandshakePacket {
             protocol_version: buffer.read_varint()?,
             server_address: buffer.read_string()?,
             server_port: buffer.read_u16()?,
             next_state: buffer.read_varint()?,
-        })
+        };
+
+        Ok(packet)
     }
 
     /// Writes the packet to the buffer
