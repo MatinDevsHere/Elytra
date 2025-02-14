@@ -26,12 +26,8 @@ rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 [profile.dev]
 incremental = true
 
-[unstable]
-codegen-backend = true
-
-[profile.server-dev]
-inherits = "dev"
-codegen-backend = "cranelift"
+[profile.dev.package."*"]
+opt-level = 2
 
 [[test]]
 name = "server_integration_test"
