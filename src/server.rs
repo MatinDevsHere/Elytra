@@ -53,11 +53,11 @@ async fn handle_connection(mut socket: TcpStream) {
                 ),
             }
         }
-        Ok(_) => panic!("This should never happen"),
         Err(socket_read_error) => log(
             format!("Failed to read from socket: {}", socket_read_error),
             Error,
         ),
+        Ok(_) => panic!("This should never happen"),
     }
 }
 
