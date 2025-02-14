@@ -1,4 +1,4 @@
-﻿use std::ffi::CStr;
+use std::ffi::CStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Returns the current time in the format YYYY-MM-DD HH:MM:SS TZ
@@ -35,7 +35,8 @@ pub fn now() -> String {
     let secs = now.as_secs() as i64;
 
     let mut tm: windows_sys::Win32::System::Time::SYSTEMTIME = unsafe { std::mem::zeroed() };
-    let mut tz: windows_sys::Win32::System::Time::TIME_ZONE_INFORMATION = unsafe { std::mem::zeroed() };
+    let mut tz: windows_sys::Win32::System::Time::TIME_ZONE_INFORMATION =
+        unsafe { std::mem::zeroed() };
 
     unsafe {
         windows_sys::Win32::System::Time::GetLocalTime(&mut tm);
@@ -74,7 +75,8 @@ pub fn now() -> String {
 
 #[cfg(target_family = "windows")]
 fn get_timezone_name() -> String {
-    let mut tz: windows_sys::Win32::System::Time::TIME_ZONE_INFORMATION = unsafe { std::mem::zeroed() };
+    let mut tz: windows_sys::Win32::System::Time::TIME_ZONE_INFORMATION =
+        unsafe { std::mem::zeroed() };
     unsafe {
         windows_sys::Win32::System::Time::GetTimeZoneInformation(&mut tz);
         let tz_name = tz.StandardName;

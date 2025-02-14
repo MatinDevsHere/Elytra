@@ -3,7 +3,7 @@ use std::io;
 
 /// Player Position And Look (clientbound)
 /// Updates the player's position on the server. This packet will also close the "Downloading Terrain" screen when joining/respawning.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PlayerPositionAndLook {
     /// Absolute or relative position, depending on Flags
     pub x: f64,

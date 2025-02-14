@@ -29,7 +29,10 @@ pub trait Packet {
 }
 
 /// Sends a packet to the client
-pub async fn send_packet<T: Packet>(packet: T, socket: &mut TcpStream) -> io::Result<()> {
+pub async fn send_packet<T: Packet, W: AsyncWriteExt + Unpin>(
+    packet: T,
+    writer: &mut W,
+) -> io::Result<()> {
     let mut response_buffer = MinecraftPacketBuffer::new();
     packet.write_to_buffer(&mut response_buffer)?;
 
@@ -39,7 +42,8 @@ pub async fn send_packet<T: Packet>(packet: T, socket: &mut TcpStream) -> io::Re
         .buffer
         .extend_from_slice(&response_buffer.buffer);
 
-    socket.write_all(&packet_with_length.buffer).await?;
+    writer.write_all(&packet_with_length.buffer).await?;
+    writer.flush().await?;
 
     Ok(())
 }
