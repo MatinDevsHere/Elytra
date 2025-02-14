@@ -1,0 +1,11 @@
+[target.'cfg(target_os = "linux")']
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.'cfg(target_os = "windows")']
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.'cfg(target_os = "macos")']
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
