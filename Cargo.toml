@@ -1,12 +1,18 @@
-cargo-features = ["codegen-backend"]
+[workspace]
+resolver = "2"
+members = [
+    "crates/elytra-protocol",
+    "crates/elytra-logger",
+    "crates/elytra-server",
+    "crates/elytra-common",
+    "crates/elytra-nbt",
+]
 
-[package]
-name = "elytra"
+[workspace.package]
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-# TODO: "full" should be replaced with only needed features
+[workspace.dependencies]
 tokio = { version = "1.36.0", features = ["full"] }
 tokio-util = { version = "0.7.10", features = ["codec"] }
 bytes = "1.5.0"
@@ -18,23 +24,12 @@ byteorder = "1.5.0"
 flate2 = "1.0.28"
 libc = "0.2.153"
 windows-sys = { version = "0.52.0", features = ["Win32_System_Time", "Win32_Foundation", "Win32_System_SystemServices"] }
-once_cell= "1.20.3"
-
-[dev-dependencies]
-futures = "0.3"
+once_cell = "1.20.3"
 tokio-test = "0.4.3"
 assert_matches = "1.5"
-
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
 [profile.dev]
 incremental = true
 
 [profile.dev.package."*"]
 opt-level = 2
-
-[[test]]
-name = "server_integration_test"
-path = "tests/server_integration_test.rs"

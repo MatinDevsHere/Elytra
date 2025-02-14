@@ -1,0 +1,14 @@
+[package]
+name = "elytra-nbt"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+byteorder = { workspace = true }
+flate2 = { workspace = true }
+serde = { workspace = true }
+
+elytra-common = { path = "../elytra-common" }
+
+[dev-dependencies]
+assert_matches = { workspace = true } 

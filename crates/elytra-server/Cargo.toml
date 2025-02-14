@@ -1,0 +1,26 @@
+[package]
+name = "elytra-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = { workspace = true }
+futures = { workspace = true }
+uuid = { workspace = true }
+once_cell = { workspace = true }
+
+elytra-protocol = { path = "../elytra-protocol" }
+elytra-logger = { path = "../elytra-logger" }
+elytra-common = { path = "../elytra-common" }
+
+[[bin]]
+name = "elytra"
+path = "src/main.rs"
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+assert_matches = { workspace = true }
+
+[[test]]
+name = "server_integration_test"
+path = "tests/server_integration_test.rs" 

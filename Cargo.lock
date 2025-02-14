@@ -129,23 +129,67 @@ dependencies = [
 ]
 
 [[package]]
-name = "elytra"
+name = "elytra-common"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "serde",
+ "tokio",
+]
+
+[[package]]
+name = "elytra-logger"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "elytra-common",
+ "libc",
+ "once_cell",
+ "windows-sys",
+]
+
+[[package]]
+name = "elytra-nbt"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "byteorder",
+ "elytra-common",
+ "flate2",
+ "serde",
+]
+
+[[package]]
+name = "elytra-protocol"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
  "byteorder",
  "bytes",
+ "elytra-common",
+ "elytra-nbt",
  "flate2",
- "futures",
- "libc",
- "once_cell",
  "serde",
  "serde_json",
  "tokio",
  "tokio-test",
  "tokio-util",
  "uuid",
- "windows-sys",
+]
+
+[[package]]
+name = "elytra-server"
+version = "0.1.0"
+dependencies = [
+ "assert_matches",
+ "elytra-common",
+ "elytra-logger",
+ "elytra-protocol",
+ "futures",
+ "once_cell",
+ "tokio",
+ "tokio-test",
+ "uuid",
 ]
 
 [[package]]
