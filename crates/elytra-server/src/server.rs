@@ -14,6 +14,7 @@ use elytra_protocol::player_position_and_look::PlayerPositionAndLook;
 use elytra_protocol::session::PlayerSession;
 use elytra_protocol::session_manager::SessionManager;
 use elytra_protocol::status::StatusResponsePacket;
+use elytra_protocol::update_light::UpdateLightPacket;
 use elytra_protocol::update_view_position::UpdateViewPositionPacket;
 use once_cell::sync;
 use std::sync::Arc;
@@ -259,6 +260,49 @@ fn create_command_graph() -> DeclareCommandsPacket {
     declare_commands_packet
 }
 
+/// Creates a default light array for a chunk section
+fn create_default_light_array() -> Vec<u8> {
+    // Create a 2048-byte array (16x16x16 nibbles)
+    let mut light_array = vec![0; 2048];
+    // Set all light levels to 15 (full brightness) for testing
+    for i in 0..2048 {
+        light_array[i] = 0xFF; // Both nibbles set to 15
+    }
+    light_array
+}
+
+/// Creates initial light data for the spawn chunk
+fn create_spawn_chunk_light() -> io::Result<UpdateLightPacket> {
+    // For initial spawn chunk at 0,0
+    let chunk_x = 0;
+    let chunk_z = 0;
+
+    // Create light arrays for each section that needs light
+    let mut sky_light_arrays = Vec::new();
+    let mut block_light_arrays = Vec::new();
+
+    // For testing, we'll add light data for sections -1 to 16 (18 sections total)
+    for _ in 0..18 {
+        sky_light_arrays.push(create_default_light_array());
+        block_light_arrays.push(create_default_light_array());
+    }
+
+    // Create bitmasks - set all 18 bits to 1 to indicate we're sending all sections
+    let light_mask = 0b111111111111111111; // 18 bits set to 1
+
+    UpdateLightPacket::new(
+        chunk_x,
+        chunk_z,
+        true, // trust edges
+        light_mask,
+        light_mask,
+        0, // no empty sky light sections
+        0, // no empty block light sections
+        sky_light_arrays,
+        block_light_arrays,
+    )
+}
+
 /// Handles the handshake packet next state
 async fn handle_handshake_next_state(
     mut socket: TcpStream,
@@ -311,6 +355,12 @@ async fn handle_handshake_next_state(
 
                 let update_view_position_packet = UpdateViewPositionPacket::new(0, 0);
                 send_packet(update_view_position_packet, &mut socket).await?;
+
+                // Send initial light data for spawn chunk
+                if let Ok(light_packet) = create_spawn_chunk_light() {
+                    send_packet(light_packet, &mut socket).await?;
+                    log("Sent initial light data for spawn chunk".to_owned(), Debug);
+                }
 
                 // Send initial position and look
                 let player_position = PlayerPositionAndLook::new(

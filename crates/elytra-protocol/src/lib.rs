@@ -12,4 +12,5 @@ pub mod session;
 pub mod session_manager;
 pub mod status;
 pub mod tags;
+pub mod update_light;
 pub mod update_view_position;
