@@ -1,9 +1,11 @@
+use elytra_logger::log::log;
 use elytra_logger::severity::LogSeverity::{Debug, Error, Info};
 use elytra_logger::systime;
-use elytra_logger::log::log;
 use elytra_protocol::client_settings::ClientSettingsPacket;
 use elytra_protocol::declare_commands::{CommandNode, DeclareCommandsPacket, Parser, StringType};
+use elytra_protocol::declare_recipes::DeclareRecipesPacket;
 use elytra_protocol::handshake::*;
+use elytra_protocol::held_item_change::HeldItemChangePacket;
 use elytra_protocol::join_game::JoinGamePacket;
 use elytra_protocol::keep_alive::KeepAlivePacket;
 use elytra_protocol::login::{LoginStartPacket, LoginSuccessPacket};
@@ -12,6 +14,7 @@ use elytra_protocol::player_position_and_look::PlayerPositionAndLook;
 use elytra_protocol::session::PlayerSession;
 use elytra_protocol::session_manager::SessionManager;
 use elytra_protocol::status::StatusResponsePacket;
+use elytra_protocol::update_view_position::UpdateViewPositionPacket;
 use once_cell::sync;
 use std::sync::Arc;
 use tokio::io;
@@ -141,7 +144,10 @@ async fn handle_play_state(socket: TcpStream, username: String) -> io::Result<()
                                 }
                             }
 
-                            log(format!("Received keep alive packet from player: {}", username), Debug);
+                            log(
+                                format!("Received keep alive packet from player: {}", username),
+                                Debug,
+                            );
                         }
                     }
                     // Player Position
@@ -294,15 +300,17 @@ async fn handle_handshake_next_state(
                 );
                 send_packet(join_game_packet, &mut socket).await?;
 
-                // let held_item_change_packet = HeldItemChangePacket::new(0);
-                // send_packet(held_item_change_packet, &mut socket).await?;
+                let held_item_change_packet = HeldItemChangePacket::new(0);
+                send_packet(held_item_change_packet, &mut socket).await?;
 
-                // let declare_recipes_packet = DeclareRecipesPacket::new();
-                // send_packet(declare_recipes_packet, &mut socket).await?;
+                let declare_recipes_packet = DeclareRecipesPacket::new();
+                send_packet(declare_recipes_packet, &mut socket).await?;
 
-                // Send command graph
-                // let declare_commands_packet = create_command_graph();
-                // send_packet(declare_commands_packet, &mut socket).await?;
+                let declare_commands_packet = create_command_graph();
+                send_packet(declare_commands_packet, &mut socket).await?;
+
+                let update_view_position_packet = UpdateViewPositionPacket::new(0, 0);
+                send_packet(update_view_position_packet, &mut socket).await?;
 
                 // Send initial position and look
                 let player_position = PlayerPositionAndLook::new(
