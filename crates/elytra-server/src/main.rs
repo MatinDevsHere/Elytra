@@ -1,5 +1,5 @@
-use elytra_logger::severity::LogSeverity::Info;
 use elytra_logger::log::log;
+use elytra_logger::severity::LogSeverity::Info;
 use elytra_server::server;
 
 #[tokio::main]
