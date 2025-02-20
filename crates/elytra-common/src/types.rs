@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+// TODO: What are these?
+
 pub type Result<T> = std::result::Result<T, crate::error::ElytraError>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,4 +15,4 @@ pub struct Position {
 pub struct Rotation {
     pub yaw: f32,
     pub pitch: f32,
-} 
+}

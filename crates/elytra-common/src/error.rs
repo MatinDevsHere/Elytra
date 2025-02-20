@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt;
 
+// TODO: What are these?
+
 #[derive(Debug)]
 pub enum ElytraError {
     IoError(std::io::Error),
@@ -31,4 +33,4 @@ impl From<std::io::Error> for ElytraError {
     fn from(err: std::io::Error) -> Self {
         ElytraError::IoError(err)
     }
-} 
+}
