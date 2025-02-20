@@ -23,7 +23,7 @@ anything.
 
 ### Prerequisites
 
-- [Rust](https://www.rust-lang.org/) (latest stable version)
+- [Rust](https://www.rust-lang.org/) (latest nightly version)
 - Cargo (installed with Rust)
 
 ### Building the Project
