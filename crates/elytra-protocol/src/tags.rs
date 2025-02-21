@@ -121,7 +121,7 @@ impl TagsPacket {
             },
         ];
 
-        TagsPacket {
+        Self {
             block_tags,
             item_tags,
             fluid_tags,

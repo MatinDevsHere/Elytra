@@ -21,7 +21,7 @@ impl Packet for DeclareRecipesPacket {
 }
 
 impl DeclareRecipesPacket {
-    pub fn new() -> DeclareRecipesPacket {
-        DeclareRecipesPacket { recipes_count: 0 }
+    pub fn new() -> Self {
+        Self { recipes_count: 0 }
     }
 }
