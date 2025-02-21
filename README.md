@@ -46,6 +46,6 @@ To run the server, use the following command:
 cargo run --release
 ```
 
-## Did I intentionally leave world spelled wrong?
+## Did I intentionally leave words spelled wrong?
 
 Good call! I try doing this regularly, so it will finally drive someone crazy and hopefully they open a PR to fix it and, `contributors++;`.
