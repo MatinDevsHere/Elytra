@@ -45,7 +45,6 @@ pub enum Palette {
 }
 
 // Helper function to write VarInts
-// TODO: Should use elytra-packet's implementation instead of this
 fn write_varint(buffer: &mut Vec<u8>, mut value: i32) {
     loop {
         let mut temp = (value & 0b0111_1111) as u8;
