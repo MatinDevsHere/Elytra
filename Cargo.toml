@@ -7,7 +7,7 @@ members = [
     "crates/elytra-logger",
     "crates/elytra-server",
     "crates/elytra-common",
-    "crates/elytra-nbt",
+    "crates/elytra-worldannotation",
 ]
 
 [workspace.package]

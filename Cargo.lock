@@ -133,7 +133,10 @@ name = "elytra-common"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
+    "byteorder",
+    "elytra-nbt",
  "serde",
+    "serde_json",
  "tokio",
 ]
 
@@ -154,7 +157,6 @@ version = "0.1.0"
 dependencies = [
  "assert_matches",
  "byteorder",
- "elytra-common",
  "flate2",
  "serde",
 ]
@@ -190,6 +192,14 @@ dependencies = [
  "tokio",
  "tokio-test",
  "uuid",
+]
+
+[[package]]
+name = "elytra-worldannotation"
+version = "0.1.0"
+dependencies = [
+    "elytra-nbt",
+    "tokio",
 ]
 
 [[package]]

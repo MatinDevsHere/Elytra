@@ -8,7 +8,5 @@ byteorder = { workspace = true }
 flate2 = { workspace = true }
 serde = { workspace = true }
 
-elytra-common = { path = "../elytra-common" }
-
 [dev-dependencies]
 assert_matches = { workspace = true } 

@@ -1,0 +1,8 @@
+[package]
+name = "elytra-worldannotation"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio = "1.43.0"
+elytra-nbt = { path = "../elytra-nbt" }
