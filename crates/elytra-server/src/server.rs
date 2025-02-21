@@ -362,6 +362,8 @@ async fn handle_handshake_next_state(
                     log("Sent initial light data for spawn chunk".to_owned(), Debug);
                 }
 
+                // TODO: Player position and look should not be here. Double check the protocol FAQ
+                //       to correctly handle this.
                 // Send initial position and look
                 let player_position = PlayerPositionAndLook::new(
                     0.0,  // x - spawn at origin
