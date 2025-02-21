@@ -4,8 +4,8 @@ linker = "/usr/bin/clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 
 # Enable `sccache` for compiler caching
-[build]
-rustc-wrapper = "sccache"
+#[build]
+#rustc-wrapper = "sccache"
 
 # Optimize debug builds for faster compile times
 [profile.dev]
