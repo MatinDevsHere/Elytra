@@ -6,7 +6,7 @@ members = [
     "crates/elytra-protocol",
     "crates/elytra-logger",
     "crates/elytra-server",
-    "crates/elytra-common",
+    "crates/elytra-wotra",
     "crates/elytra-worldannotation",
 ]
 

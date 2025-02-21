@@ -11,7 +11,7 @@ once_cell = { workspace = true }
 
 elytra-protocol = { path = "../elytra-protocol" }
 elytra-logger = { path = "../elytra-logger" }
-elytra-common = { path = "../elytra-common" }
+elytra-common = { path = "../elytra-wotra" }
 
 [[bin]]
 name = "elytra"

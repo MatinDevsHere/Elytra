@@ -8,7 +8,7 @@ libc = { workspace = true }
 windows-sys = { workspace = true }
 once_cell = { workspace = true }
 
-elytra-common = { path = "../elytra-common" }
+elytra-common = { path = "../elytra-wotra" }
 
 [dev-dependencies]
 assert_matches = { workspace = true } 

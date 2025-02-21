@@ -4,13 +4,13 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/crates/elytra-common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-logger/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-protocol/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-server/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-server/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-nbt/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/elytra-worldannotation/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/elytra-wotra/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

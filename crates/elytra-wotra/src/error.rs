@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-// TODO: What are these?
+// TODO: What are these
 
 #[derive(Debug)]
 pub enum ElytraError {
