@@ -1,12 +1,11 @@
 [package]
-name = "elytra-common"
+name = "elytra-wotra"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 tokio = { workspace = true }
 elytra-nbt = { path = "../elytra-nbt" }
-elytra-protocol = { path = "../elytra-protocol" }
 byteorder = "1.5.0"
 serde = { version = "1.0.217", features = ["derive"] }
 

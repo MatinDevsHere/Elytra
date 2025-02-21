@@ -17,13 +17,30 @@ impl BlockState {
     pub fn is_air(&self) -> bool {
         self.block_type == 0 // Assuming block_type 0 is air
     }
+
+    pub fn get_global_id(&self) -> u32 {
+        global_palette_id_for_state(*self)
+    }
+
+    pub fn from_global_id(id: u32) -> Self {
+        state_for_global_palette_id(id)
+    }
+}
+
+impl Default for BlockState {
+    fn default() -> Self {
+        Self {
+            block_type: 0,
+            properties: 0,
+        }
+    }
 }
 
 pub struct ChunkColumn {
     x: i32,
     z: i32,
     sections: [Option<ChunkSection>; 16],
-    biomes: [i32; 1024],
+    biomes: [i32; 1024],      // 4x4x4 blocks for each section
     block_entities: Vec<Tag>, // Tag::Compound
     heightmaps: Vec<Tag>,     // Tag::Compound
 }
@@ -71,7 +88,6 @@ fn create_heightmap(data: &[u64; 36]) -> Tag {
         "MOTION_BLOCKING".to_string(),
         Tag::LongArray(heightmap_data),
     );
-    // Optionally add WORLD_SURFACE, though it's not required.
 
     Tag::Compound(compound)
 }
@@ -82,7 +98,7 @@ impl ChunkColumn {
             x,
             z,
             sections: Default::default(),
-            biomes: [127; 1024], // Initialize with 'Void' biome (127)
+            biomes: [127; 1024], // Initialize with 'Void' biome
             block_entities: Vec::new(),
             heightmaps: Vec::new(),
         }
@@ -103,17 +119,23 @@ impl ChunkColumn {
         self.sections[section_y].as_mut()
     }
 
-    pub fn set_biome(&mut self, x: usize, z: usize, biome_id: i32) {
-        if x < 16 && z < 16 {
-            let index = ((z & 15) << 2) | (x & 15);
-            self.biomes[index] = biome_id;
+    pub fn set_biome(&mut self, x: usize, y: usize, z: usize, biome_id: i32) {
+        if x < 16 && y < 256 && z < 16 {
+            let index = ((y >> 2) & 63) << 4 | ((z >> 2) & 3) << 2 | ((x >> 2) & 3);
+            if index < 1024 {
+                self.biomes[index] = biome_id;
+            }
         }
     }
 
-    pub fn get_biome(&self, x: usize, z: usize) -> Option<i32> {
-        if x < 16 && z < 16 {
-            let index = ((z & 15) << 2) | (x & 15);
-            Some(self.biomes[index])
+    pub fn get_biome(&self, x: usize, y: usize, z: usize) -> Option<i32> {
+        if x < 16 && y < 256 && z < 16 {
+            let index = ((y >> 2) & 63) << 4 | ((z >> 2) & 3) << 2 | ((x >> 2) & 3);
+            if index < 1024 {
+                Some(self.biomes[index])
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -149,13 +171,22 @@ impl ChunkColumn {
                 let long_index = index / 7;
                 let bit_offset = (index % 7) * 9;
 
+                // Ensure we don't access out of bounds
+                if long_index >= 36 {
+                    continue;
+                }
+
                 motion_blocking_data[long_index] |= (highest_y & 0x1FF) << bit_offset;
-                if (index % 7) > 5 {
+                // Only write to the next long if we're not at the last long and the value needs to span two longs
+                if (index % 7) > 5 && long_index < 35 {
                     motion_blocking_data[long_index + 1] |=
                         (highest_y & 0x1FF) >> (63 - bit_offset);
                 }
             }
         }
+
+        // Clear existing heightmaps and add only the new one
+        self.heightmaps.clear();
         self.heightmaps
             .push(create_heightmap(&motion_blocking_data));
     }
@@ -208,21 +239,9 @@ impl ChunkColumn {
         // 10. Block Entities (Array of NBT Tag)
         for block_entity in &self.block_entities {
             if let Some(compound) = block_entity.as_compound() {
-                // Find x, y, z and id tags
-                let mut x = 0;
-                let mut y = 0;
-                let mut z = 0;
+                // Find id tag
                 let mut id = String::new();
 
-                if let Some(Tag::Int(x_val)) = compound.get("x") {
-                    x = *x_val;
-                }
-                if let Some(Tag::Int(y_val)) = compound.get("y") {
-                    y = *y_val;
-                }
-                if let Some(Tag::Int(z_val)) = compound.get("z") {
-                    z = *z_val;
-                }
                 if let Some(Tag::String(id_val)) = compound.get("id") {
                     id = id_val.clone();
                 }
@@ -232,60 +251,145 @@ impl ChunkColumn {
 
         buffer
     }
+
+    pub fn get_x(&self) -> i32 {
+        self.x
+    }
+
+    pub fn get_z(&self) -> i32 {
+        self.z
+    }
+
+    pub fn get_heightmaps(&self) -> &Vec<Tag> {
+        &self.heightmaps
+    }
+
+    pub fn get_block_entities(&self) -> &Vec<Tag> {
+        &self.block_entities
+    }
+
+    pub fn is_section_empty(&self, y: usize) -> bool {
+        if y >= 16 {
+            return true;
+        }
+        self.sections[y].is_none()
+    }
+
+    pub fn get_block_state(&self, x: usize, y: usize, z: usize) -> BlockState {
+        let section_y = y >> 4;
+        let section_local_y = y & 0xF;
+
+        if let Some(section) = self.get_section(section_y) {
+            section.get_block_state_at(x, section_local_y, z)
+        } else {
+            BlockState::default() // Air for empty sections
+        }
+    }
+
+    pub fn set_block_state(&mut self, x: usize, y: usize, z: usize, state: BlockState) {
+        let section_y = y >> 4;
+        let section_local_y = y & 0xF;
+
+        if let Some(section) = self.get_section_mut(section_y) {
+            section.set_block_state(x, section_local_y, z, state);
+        }
+    }
 }
 
 impl ChunkSection {
     pub fn new() -> Self {
         ChunkSection {
             block_count: 0,
-            palette: Palette::default(), // Use a default palette (likely Direct)
-            data: vec![0; 4096 * 14 / 64], // Initialize with enough space for 14 bits/block
+            palette: Palette::Indirect {
+                bits_per_block: 4,
+                palette: Vec::new(),
+                state_to_index: HashMap::new(),
+            },
+            data: vec![0; 256], // Initial size for 4 bits per block
         }
     }
 
     pub fn get_block_state_at(&self, x: usize, y: usize, z: usize) -> BlockState {
-        let bits_per_block = self.palette.bits_per_block();
-        let block_number = (y * 16 * 16) + (z * 16) + x;
-        let start_long = (block_number * bits_per_block as usize) / 64;
-        let start_offset = (block_number * bits_per_block as usize) % 64;
-        let end_long = ((block_number + 1) * bits_per_block as usize - 1) / 64;
-        let individual_value_mask = (1 << bits_per_block) - 1;
-
-        let mut data = if start_long == end_long {
-            (self.data[start_long] >> start_offset) as u32
-        } else {
-            let end_offset = 64 - start_offset;
-            ((self.data[start_long] >> start_offset) | (self.data[end_long] << end_offset)) as u32
-        };
-
-        data &= individual_value_mask;
-        self.palette.state_for_id(data)
+        let index = (y << 8) | (z << 4) | x;
+        match &self.palette {
+            Palette::Direct => {
+                let value = self.get_data_value(index);
+                BlockState::from_global_id(value)
+            }
+            Palette::Indirect { palette, .. } => {
+                let value = self.get_data_value(index) as usize;
+                if value >= palette.len() {
+                    BlockState::default() // Invalid palette index
+                } else {
+                    BlockState::from_global_id(palette[value])
+                }
+            }
+        }
     }
 
-    pub fn set_block_state_at(&mut self, x: usize, y: usize, z: usize, state: BlockState) {
-        let bits_per_block = self.palette.bits_per_block();
-        let block_number = (y * 16 * 16) + (z * 16) + x;
-        let start_long = (block_number * bits_per_block as usize) / 64;
-        let start_offset = (block_number * bits_per_block as usize) % 64;
-        let end_long = ((block_number + 1) * bits_per_block as usize - 1) / 64;
-        let individual_value_mask = (1 << bits_per_block) - 1;
+    fn get_data_value(&self, index: usize) -> u32 {
+        let bits_per_block = match &self.palette {
+            Palette::Direct => 13,
+            Palette::Indirect { bits_per_block, .. } => *bits_per_block,
+        };
 
-        let value = self.palette.id_for_state(state) as u64;
-        let value = value & individual_value_mask;
+        let bits_per_value = bits_per_block as usize;
+        let values_per_long = 64 / bits_per_value;
+        let long_index = index / values_per_long;
+        let bit_offset = (index % values_per_long) * bits_per_value;
 
-        self.data[start_long] &= !(individual_value_mask << start_offset); // Clear existing bits
-        self.data[start_long] |= value << start_offset;
-
-        if start_long != end_long {
-            self.data[end_long] &= !individual_value_mask; // Clear existing bits
-            self.data[end_long] |= value >> (64 - start_offset);
+        if long_index >= self.data.len() {
+            return 0;
         }
 
-        // Update block_count (you'll need to track changes)
-        if state.is_air() && !self.get_block_state_at(x, y, z).is_air() {
-            self.block_count -= 1;
-        } else if !state.is_air() && self.get_block_state_at(x, y, z).is_air() {
-            self.block_count += 1;
+        let value = self.data[long_index];
+        let mask = (1u64 << bits_per_value) - 1;
+        ((value >> bit_offset) & mask) as u32
+    }
+
+    fn set_data_value(&mut self, index: usize, value: u32) {
+        let bits_per_block = match &self.palette {
+            Palette::Direct => 13,
+            Palette::Indirect { bits_per_block, .. } => *bits_per_block,
+        };
+
+        let bits_per_value = bits_per_block as usize;
+        let values_per_long = 64 / bits_per_value;
+        let long_index = index / values_per_long;
+        let bit_offset = (index % values_per_long) * bits_per_value;
+
+        if long_index >= self.data.len() {
+            self.data.resize(long_index + 1, 0);
+        }
+
+        let mask = (1u64 << bits_per_value) - 1;
+        let value = (value as u64) & mask;
+        self.data[long_index] &= !(mask << bit_offset);
+        self.data[long_index] |= value << bit_offset;
+    }
+
+    pub fn set_block_state(&mut self, x: usize, y: usize, z: usize, state: BlockState) {
+        let index = (y << 8) | (z << 4) | x;
+        match &mut self.palette {
+            Palette::Direct => {
+                self.set_data_value(index, state.get_global_id());
+            }
+            Palette::Indirect {
+                bits_per_block,
+                palette,
+                state_to_index,
+            } => {
+                let global_id = state.get_global_id();
+                let palette_index = if let Some(&index) = state_to_index.get(&state) {
+                    index
+                } else {
+                    let index = palette.len() as u32;
+                    palette.push(global_id);
+                    state_to_index.insert(state, index);
+                    index
+                };
+                self.set_data_value(index, palette_index);
+            }
         }
     }
 
@@ -299,7 +403,7 @@ impl ChunkSection {
         // 3. Palette (Varies)
         match &self.palette {
             Palette::Indirect {
-                bits_per_block,
+                bits_per_block: _,
                 palette,
                 state_to_index: _,
             } => {
@@ -425,68 +529,55 @@ impl ChunkSection {
 }
 
 impl Palette {
-    pub fn bits_per_block(&self) -> u8 {
-        match self {
-            Palette::Indirect { bits_per_block, .. } => *bits_per_block,
-            Palette::Direct => 14, // Or calculate based on global palette size
+    pub fn new(bits_per_block: u8) -> Self {
+        if bits_per_block >= 9 {
+            Palette::Direct
+        } else {
+            Palette::Indirect {
+                bits_per_block,
+                palette: Vec::new(),
+                state_to_index: HashMap::new(),
+            }
         }
     }
 
-    pub fn id_for_state(&self, state: BlockState) -> u32 {
+    pub fn bits_per_block(&self) -> u8 {
         match self {
-            Palette::Indirect {
-                palette,
-                state_to_index,
-                ..
-            } => {
-                // 1. Try to find the state in the HashMap
-                if let Some(&index) = state_to_index.get(&state) {
-                    return index;
-                }
-
-                // 2. If not found, get the global ID
-                let global_id = global_palette_id_for_state(state);
-
-                // 3. Check if the global ID is already in the palette (rare, but possible)
-                if let Some(index) = palette.iter().position(|&id| id == global_id) {
-                    return index as u32;
-                }
-
-                // 4. Add the global ID to the palette
-
-                // If the palette is full, we should resize, but for now, we'll just return the global ID.
-                // This will cause incorrect serialization if not handled properly during serialization.
-                // The proper fix is to resize *before* adding, but that requires more complex logic.
-                let next_index = palette.len() as u32;
-                if next_index >= (1 << self.bits_per_block()) {
-                    // Palette is full!  In a real implementation, you'd resize here.
-                    // For this example, we'll just return the global ID, which will lead to incorrect behavior.
-                    return global_id;
-                }
-                let mut new_palette = palette.clone();
-                let mut new_state_to_index = state_to_index.clone();
-
-                new_palette.push(global_id);
-                new_state_to_index.insert(state, next_index);
-
-                // 5. Return the new index
-                next_index
-            }
-            Palette::Direct => global_palette_id_for_state(state),
+            Palette::Direct => 13,
+            Palette::Indirect { bits_per_block, .. } => *bits_per_block,
         }
     }
 
     pub fn state_for_id(&self, id: u32) -> BlockState {
         match self {
+            Palette::Direct => BlockState::from_global_id(id),
             Palette::Indirect { palette, .. } => {
-                // Lookup the global ID in the palette
-                let global_id = palette
-                    .get(id as usize)
-                    .expect("Palette index out of bounds");
-                // Get the BlockState from the global palette
-                state_for_global_palette_id(*global_id)
+                if id as usize >= palette.len() {
+                    BlockState::default()
+                } else {
+                    BlockState::from_global_id(palette[id as usize])
+                }
             }
-            Palette::Direct => state_for_global_palette_id(id),
+        }
+    }
+
+    pub fn id_for_state(&mut self, state: BlockState) -> u32 {
+        match self {
+            Palette::Direct => state.get_global_id(),
+            Palette::Indirect {
+                palette,
+                state_to_index,
+                ..
+            } => {
+                if let Some(&index) = state_to_index.get(&state) {
+                    index
+                } else {
+                    let index = palette.len() as u32;
+                    palette.push(state.get_global_id());
+                    state_to_index.insert(state, index);
+                    index
+                }
+            }
         }
     }
 

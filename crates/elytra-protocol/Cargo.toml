@@ -13,7 +13,7 @@ tokio = { workspace = true }
 tokio-util = { workspace = true }
 flate2 = { workspace = true }
 
-elytra-common = { path = "../elytra-wotra" }
+elytra-wotra = { path = "../elytra-wotra" }
 elytra-nbt = { path = "../elytra-nbt" }
 
 [dev-dependencies]

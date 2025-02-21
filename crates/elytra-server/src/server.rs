@@ -1,6 +1,7 @@
 use elytra_logger::log::log;
 use elytra_logger::severity::LogSeverity::{Debug, Error, Info};
 use elytra_logger::systime;
+use elytra_protocol::chunk_data::ChunkDataPacket;
 use elytra_protocol::client_settings::ClientSettingsPacket;
 use elytra_protocol::declare_commands::{CommandNode, DeclareCommandsPacket, Parser, StringType};
 use elytra_protocol::declare_recipes::DeclareRecipesPacket;
@@ -16,6 +17,7 @@ use elytra_protocol::session_manager::SessionManager;
 use elytra_protocol::status::StatusResponsePacket;
 use elytra_protocol::update_light::UpdateLightPacket;
 use elytra_protocol::update_view_position::UpdateViewPositionPacket;
+use elytra_wotra::chunk::{BlockState, ChunkColumn};
 use once_cell::sync;
 use std::sync::Arc;
 use tokio::io;
@@ -334,9 +336,11 @@ async fn handle_handshake_next_state(
 
                 // TODO: Implement login checks
 
+                // 1. Login Success packet
                 let login_success_packet = LoginSuccessPacket::new(login_start.username.clone());
                 send_packet(login_success_packet, &mut socket).await?;
 
+                // 2. Join Game packet
                 let join_game_packet = JoinGamePacket::new(
                     1,
                     vec!["minecraft:overworld".to_owned()],
@@ -344,37 +348,90 @@ async fn handle_handshake_next_state(
                 );
                 send_packet(join_game_packet, &mut socket).await?;
 
+                // TODO: Send Plugin Message (minecraft:brand) packet
+                // TODO: Send Server Difficulty packet
+                // TODO: Send Player Abilities packet
+                // TODO: Expect Client Settings packet from client
+
+                // 3. Held Item Change packet
                 let held_item_change_packet = HeldItemChangePacket::new(0);
                 send_packet(held_item_change_packet, &mut socket).await?;
 
+                // 4. Declare Recipes packet
                 let declare_recipes_packet = DeclareRecipesPacket::new();
                 send_packet(declare_recipes_packet, &mut socket).await?;
 
+                // TODO: Send Tags packet
+                // TODO: Send Entity Status packet
+
+                // 5. Declare Commands packet
                 let declare_commands_packet = create_command_graph();
                 send_packet(declare_commands_packet, &mut socket).await?;
 
+                // TODO: Send Unlock Recipes packet
+                // TODO: Send Player Info (Add Player action)
+                // TODO: Send Player Info (Update latency action)
+
+                // 6. Update View Position packet
                 let update_view_position_packet = UpdateViewPositionPacket::new(0, 0);
                 send_packet(update_view_position_packet, &mut socket).await?;
 
-                // Send initial light data for spawn chunk
+                // Create and send spawn chunk
+                let mut spawn_chunk = ChunkColumn::new(0, 0);
+
+                // Create a dirt platform
+                let dirt_state = BlockState {
+                    block_type: 1, // Dirt block
+                    properties: 0,
+                };
+
+                // Fill a 10x10 area at y=64 with dirt
+                for x in 3..13 {
+                    for z in 3..13 {
+                        spawn_chunk.set_block_state(x, 64, z, dirt_state);
+                    }
+                }
+
+                // Set biomes (plains biome = 1)
+                for y in 0..64 {
+                    for z in 0..4 {
+                        for x in 0..4 {
+                            spawn_chunk.set_biome(x * 4, y * 4, z * 4, 1);
+                        }
+                    }
+                }
+
+                // Calculate heightmaps
+                spawn_chunk.calculate_heightmaps();
+
+                // 7. Update Light packet
                 if let Ok(light_packet) = create_spawn_chunk_light() {
                     send_packet(light_packet, &mut socket).await?;
                     log("Sent initial light data for spawn chunk".to_owned(), Debug);
                 }
 
-                // TODO: Player position and look should not be here. Double check the protocol FAQ
-                //       to correctly handle this.
-                // Send initial position and look
+                // 8. Chunk Data packet
+                let chunk_data_packet = ChunkDataPacket::new_full_chunk(&spawn_chunk);
+                send_packet(chunk_data_packet, &mut socket).await?;
+
+                // TODO: Send World Border packet
+                // TODO: Send Spawn Position packet
+
+                // 9. Player Position And Look packet
                 let player_position = PlayerPositionAndLook::new(
-                    0.0,  // x - spawn at origin
-                    64.0, // y - reasonable spawn height
-                    0.0,  // z - spawn at origin
+                    8.0,  // x - center of dirt platform
+                    65.0, // y - one block above platform
+                    8.0,  // z - center of dirt platform
                     0.0,  // yaw - looking straight ahead
                     0.0,  // pitch - looking straight ahead
                     0,    // flags - all values are absolute
                     0,    // teleport ID - first teleport
                 );
                 send_packet(player_position, &mut socket).await?;
+
+                // TODO: Expect Teleport Confirm from client
+                // TODO: Expect Player Position And Look from client
+                // TODO: Expect Client Status from client
 
                 // After sending join game packet, transition to play state
                 handle_play_state(socket, login_start.username).await?;

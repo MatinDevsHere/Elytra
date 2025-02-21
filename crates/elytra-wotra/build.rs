@@ -7,16 +7,20 @@ use std::path::Path;
 
 #[derive(Deserialize, Debug)]
 struct BlockState {
+    #[allow(dead_code)]
     name: String,
+    #[allow(dead_code)]
     #[serde(rename = "type")]
     state_type: String,
     num_values: usize,
+    #[allow(dead_code)]
     #[serde(default)] // Handle missing values
     values: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]
 struct Block {
+    #[allow(dead_code)]
     id: u32,
     name: String,
     #[serde(rename = "minStateId")]
@@ -24,6 +28,7 @@ struct Block {
     #[serde(rename = "maxStateId")]
     max_state_id: u32,
     states: Vec<BlockState>,
+    #[allow(dead_code)]
     #[serde(rename = "defaultState")]
     default_state: u32,
 }

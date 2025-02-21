@@ -68,7 +68,7 @@ impl Packet for TagsPacket {
 }
 
 impl TagsPacket {
-    pub fn new() -> TagsPacket {
+    pub fn new() -> Self {
         // Block tags
         let block_tags = vec![
             Tag {

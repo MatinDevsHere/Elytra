@@ -309,6 +309,28 @@ impl MinecraftPacketBuffer {
         self.cursor += 4;
         Ok(f32::from_be_bytes(bytes))
     }
+
+    pub fn get_cursor(&self) -> usize {
+        self.cursor
+    }
+
+    pub fn set_cursor(&mut self, value: usize) {
+        self.cursor = value;
+    }
+
+    pub fn advance_cursor(&mut self, amount: usize) {
+        self.cursor += amount;
+    }
+
+    /// Write raw bytes to the buffer
+    pub fn write_bytes_raw(&mut self, bytes: &[u8]) {
+        self.buffer.extend_from_slice(bytes);
+    }
+
+    /// Get a reference to the internal buffer
+    pub fn get_buffer(&self) -> &[u8] {
+        &self.buffer
+    }
 }
 
 impl std::io::Write for MinecraftPacketBuffer {

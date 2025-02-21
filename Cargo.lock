@@ -129,23 +129,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "elytra-common"
-version = "0.1.0"
-dependencies = [
- "assert_matches",
-    "byteorder",
-    "elytra-nbt",
- "serde",
-    "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "elytra-logger"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "elytra-common",
+    "elytra-wotra",
  "libc",
  "once_cell",
  "windows-sys",
@@ -168,8 +156,8 @@ dependencies = [
  "assert_matches",
  "byteorder",
  "bytes",
- "elytra-common",
  "elytra-nbt",
+    "elytra-wotra",
  "flate2",
  "serde",
  "serde_json",
@@ -184,9 +172,9 @@ name = "elytra-server"
 version = "0.1.0"
 dependencies = [
  "assert_matches",
- "elytra-common",
  "elytra-logger",
  "elytra-protocol",
+    "elytra-wotra",
  "futures",
  "once_cell",
  "tokio",
@@ -199,6 +187,18 @@ name = "elytra-worldannotation"
 version = "0.1.0"
 dependencies = [
     "elytra-nbt",
+    "tokio",
+]
+
+[[package]]
+name = "elytra-wotra"
+version = "0.1.0"
+dependencies = [
+    "assert_matches",
+    "byteorder",
+    "elytra-nbt",
+    "serde",
+    "serde_json",
     "tokio",
 ]
 

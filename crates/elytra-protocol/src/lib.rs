@@ -1,3 +1,4 @@
+pub mod chunk_data;
 pub mod client_settings;
 pub mod declare_commands;
 pub mod declare_recipes;
