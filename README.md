@@ -1,4 +1,4 @@
-﻿# Elytra ![GitHub commit activity](https://img.shields.io/github/commit-activity/w/MatinDevsHere/Elytra?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/MatinDevsHere/Elytra?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/MatinDevsHere/Elytra?style=flat-square) ![GitHub](https://img.shields.io/github/license/MatinDevsHere/Elytra?style=flat-square)
+﻿# Elytra ![Static Badge](https://img.shields.io/badge/3k%2Fweek%20-%203k%2Fweek%20-%203k%2Fweek?style=flat-square&label=commit%20activity) ![GitHub last commit](https://img.shields.io/github/last-commit/MatinDevsHere/Elytra?style=flat-square) ![GitHub issues](https://img.shields.io/github/issues/MatinDevsHere/Elytra?style=flat-square) ![GitHub](https://img.shields.io/github/license/MatinDevsHere/Elytra?style=flat-square)
 
 Elytra is a lightweight asynchronous server application written in Rust. It implements basic networking protocols
 similar to those used in Minecraft, featuring packet handling (handshake, status, etc.) and an extensible logging
